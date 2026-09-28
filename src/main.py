@@ -42,7 +42,6 @@ def exceed_capacity_limit(vehicles: list[Vehicle], ship: Ship) -> bool:
 def swapping_neighbor(): 
     pass
 
-
 def moving_neighbor(): 
     pass
 
