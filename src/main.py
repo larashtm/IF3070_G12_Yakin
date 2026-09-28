@@ -8,8 +8,17 @@ class Vehicle:
         self.eta = eta
         self.is_loaded = False 
 
-    def rotate():
-        pass
+        self.x = 0 
+        self.y = 0
+
+    def rotate(self):
+        #Ubah orientation dan tukar ukuran dimensi 
+        if self.orientation == 'Horizontal': 
+            self.orientation = 'Vertical'
+        else:
+            self.orientation = 'Horizontal'
+
+        self.dimension.width, self.dimension.length = self.dimension.length, self.dimension.width; 
 
 
 class Ship:
