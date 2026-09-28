@@ -34,13 +34,53 @@ class Dimension:
 def shipping_fee(vehicles: list[Vehicle]) -> int:
     return sum(vehicle.shippingFee for vehicle in vehicles)
 
-def not_overlapping():
-    #if vehicle1 and vehicle2 are overlapping, return False
-    pass
+def not_overlapping(vehicles: list[Vehicle], ship: Ship) -> bool:
+    #kumpulin semua mobil di kapalnya 
+    mobil_di_kapal = []
+    for mobil in vehicles: 
+        if mobil.is_loaded: 
+            mobil_di_kapal.append(mobil)
 
-def exceed_ship_limit():
-    #if the total weight of all vehicles exceed the ship's border/area, return True
-    pass
+    #bandingin setiap mobil satu dengan lain 
+    jumlah_mobil = len(mobil_di_kapal)
+    for i in range(jumlah_mobil): 
+        mobil_a = mobil_di_kapal[i]
+
+        for j in range (i+1,jumlah_mobil): 
+            mobil_b = mobil_di_kapal[j]
+            #ngitung batas fisik 
+            a_kanan = mobil_a.x + mobil_a.dimension.width
+            a_bawah = mobil_a.y + mobil_a.dimension.length 
+
+            b_kanan = mobil_b.x + mobil_b.dimension.width 
+            b_bawah = mobil_b.y + mobil_b.dimension.length 
+
+            #cek apakah posisinya aman di sumbu mendatar (X) atau menurun (Y)
+            aman_di_sumbu_x = (a_kanan <= mobil_b.x) or (mobil_a.x >= b_kanan)
+            aman_di_sumbu_y = (a_bawah <= mobil_b.y) or (mobil_a.y >= b_bawah)
+
+            if not (aman_di_sumbu_x or aman_di_sumbu_y): 
+                return False 
+
+    return True
+
+
+
+def exceed_ship_limit(vehicles: list[Vehicles], ship:Ship) -> bool:
+    for mobil in vehicles: 
+        if not mobil.is_loaded: 
+            continue #ngelewat mobil yang gak di kapal 
+
+        kiri = mobil.x 
+        atas = mobil.y 
+        kanan = mobil.x + mobil.dimension.width 
+        bawah = mobil.y + mobil.dimension.length
+
+        if kiri < 0 or atas < 0 or kanan > ship.dimension.width or bawah > ship.dimension.length: 
+            return True 
+
+    return False #Artinya aman, semua di dalam garis 
+    
 
 def exceed_capacity_limit(vehicles: list[Vehicle], ship: Ship) -> bool:
     total_weight = sum(v.weight for v in vehicles)
