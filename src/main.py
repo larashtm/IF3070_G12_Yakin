@@ -117,3 +117,18 @@ def rotate(vehicles: list[Vehicle]):
         vehicle.orientation = "Horizontal"
 
     vehicle.dimension.width, vehicle.dimension.length = vehicle.dimension.length, vehicle.dimension.width
+
+
+def display(vehicles: list[Vehicle], ship: Ship):
+    map = [["." for i in range(ship.dimension.width)]
+           for i in range(ship.dimension.length)]
+
+    for v in vehicles:
+        if v.is_loaded:
+            for x in range(v.x, v.x + v.dimension.width):
+                for y in range(v.y, v.y + v.dimension.length):
+                    if 0 <= x < ship.dimension.width and 0 <= y < ship.dimension.length:
+                        map[y][x] = v.id[0]  #sementara ini masih pake id, tapi kalo id string nama owen gitu tar jadi owenowen etc??
+
+    for row in map:
+        print("".join(row))
