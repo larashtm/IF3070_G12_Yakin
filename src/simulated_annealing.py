@@ -20,6 +20,7 @@ def get_neighbor(vehicles, ship):
 
 def simulated_annealing(initial_state, vehicles, ship, max_iter=100, init_temp=100, cooling_rate=0.99):
     #initialize
+    main.display(vehicles, ship)
     #yang T besar <0.5 apa ya? cek catetan dulu
 
     current_state = initial_state
