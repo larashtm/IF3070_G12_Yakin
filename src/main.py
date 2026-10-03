@@ -19,13 +19,16 @@ class Ship:
         self.dimension = Dimension(width,length)
         self.maxCapacity = maxCapacity
 
+
 class Dimension:
     def __init__(self, width: int, length: int):
         self.width = width
         self.length = length
 
+
 def shipping_fee(vehicles: list[Vehicle]) -> int:
     return sum(vehicle.shippingFee for vehicle in vehicles if vehicle.is_loaded)
+
 
 def not_overlapping(vehicles: list[Vehicle], ship: Ship) -> bool:
     #kumpulin semua vehicle di kapalnya 
@@ -54,9 +57,8 @@ def not_overlapping(vehicles: list[Vehicle], ship: Ship) -> bool:
 
             if not (aman_x and aman_y): 
                 return False 
-            
+               
     return True
-
 
 
 def exceed_ship_limit(vehicles: list[Vehicle], ship:Ship) -> bool:
@@ -82,6 +84,7 @@ def exceed_capacity_limit(vehicles: list[Vehicle], ship: Ship) -> bool:
     else:
         return False
 
+
 def objective_function(vehicles: list[Vehicle], ship: Ship) -> int: 
     if exceed_capacity_limit(vehicles,ship) == True: 
         return 0 
@@ -91,6 +94,7 @@ def objective_function(vehicles: list[Vehicle], ship: Ship) -> int:
         return 0
     total_uang = shipping_fee(vehicles)
     return total_uang
+
 
 def swap(vehicles: list[Vehicle]):
     vehicle_a, vehicle_b = random.sample(vehicles, 2)
