@@ -33,7 +33,7 @@ State *neighbor* dapat didapatkan melalui:
 5. Buka folder dan src folder
    ```bash
    cd src
-7. Ubah dictionary dari barang yang akan dimasukkan ke kontainer dengan mengubah file kontainer.json
+7. Ubah dictionary dari *vehicles* yang akan di-*load* ke *ship* dengan mengubah file vehicles.json
 8. Jalankan program main dari kode python di file main
    ```bash
    main.py
