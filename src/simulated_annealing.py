@@ -1,4 +1,4 @@
-import main, random, copy
+import main, random, copy, math
 
 #inisialisasi state, random
 #rumus, temp, 0.5
@@ -28,17 +28,30 @@ def simulated_annealing(initial_state, ship, max_iter=100, init_temp=100, coolin
     best_score = current_score
     temperature = init_temp
 
+    main.display(current_state, ship) #buat crosscheck
+
     for i in range(max_iter):
         neighbor_state = get_neighbor(current_state, ship)
         neighbor_score = main.objective_function(neighbor_state, ship)
 
         #rumus euler delta T/t
         delta = neighbor_score - current_score
-
+        #ini kalo neighbor lebih baik langsung acc
         if delta > 0:
             current_state = neighbor_state
             current_score = neighbor_score
+
         else: #bikin yang probabilitas. cek catetan!!
-            pass
-    
-    pass
+            probability = random.random()
+            if probability < math.exp(delta / temperature):
+                current_state = neighbor_state
+                current_score = neighbor_score
+
+        if current_score > best_score:
+            best_state = copy.deepcopy(current_state)
+            best_score = current_score
+
+        temperature = temperature * cooling_rate
+        main.display(current_state, ship) #buat cross check
+
+    return best_state, best_score
