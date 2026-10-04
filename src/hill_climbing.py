@@ -56,47 +56,52 @@ def get_random_neighbor(vehicles, ship):
     return neighbor
 
 
-# Simple / Stochastic Hill Climbing
-def hill_climbing(awal, ship, max_eval=3000, max_stuck=300):
-    print(f"Maksimum evaluasi tetangga: {max_eval}")
-    t0 = time.process_time()
-    
-    # Simpan state awal
-    state_sekarang = copy.deepcopy(awal)
-    skor = objective_function(state_sekarang, ship)
-    print(f"Skor Awal Objective: {skor}")
-    history = [skor]
-    stuck = 0
-    iterasi = 0
-    print(f"[{iterasi}] State Awal. Skor: {skor}")
-    
-    while iterasi < max_eval and stuck < max_stuck:
-        iterasi += 1
-        # Gunakan copy.deepcopy() saat membuat neighbor agar tidak terjadi in-place mutation
-        tetangga = get_random_neighbor(state_sekarang, ship)
-        skor_tetangga = objective_function(tetangga, ship)
-        
-        # Kriteria penerimaan solusi: current_state HANYA di-update jika neighbor_score > current_score
-        if skor_tetangga > skor:
-            state_sekarang = copy.deepcopy(tetangga)
-            skor = skor_tetangga
-            stuck = 0
-            print(f"[{iterasi}] Pindah. Skor Baru: {skor}")
-        else:
-            stuck += 1
+# Stochastic Hill Climbing sesuai standar Lab
+def stochastic_hill_climbing(initial_vehicles, ship, max_iterations=3000, num_candidates=4):
+    current_vehicles = copy.deepcopy(initial_vehicles)
+    current_score = objective_function(current_vehicles, ship)
+    history_score = [current_score]
+    total_iterations = 0
 
-        # List history mencatat current_score (skor terbaik saat itu di setiap iterasi), BUKAN neighbor_score acaknya
-        history.append(skor)
-            
+    while total_iterations < max_iterations:
+        total_iterations += 1
+        better_neighbors = []
+
+        # Sampling sekumpulan kandidat tetangga acak
+        for _ in range(num_candidates):
+            candidate = get_random_neighbor(current_vehicles, ship)
+            candidate_score = objective_function(candidate, ship)
+            if candidate_score > current_score:
+                better_neighbors.append((candidate, candidate_score))
+
+        # Terhenti jika tidak ada kandidat yang lebih baik (stuck di local optima)
+        if not better_neighbors:
+            break
+
+        # Pilih 1 kandidat secara acak dari kumpulan yang lebih baik
+        selected_neighbor, selected_score = random.choice(better_neighbors)
+        current_vehicles = copy.deepcopy(selected_neighbor)
+        current_score = selected_score
+        
+        history_score.append(current_score)
+
+    return current_vehicles, current_score, total_iterations, history_score
+
+
+# Alias fungsi untuk kompatibilitas
+def hill_climbing(awal, ship, max_eval=3000, max_stuck=300, num_candidates=4):
+    t0 = time.process_time()
+    best_vehicles, best_score, total_iterations, history_score = stochastic_hill_climbing(
+        awal, ship, max_iterations=max_eval, num_candidates=num_candidates
+    )
     lama = time.process_time() - t0
-    skor_awal = history[0]
     return {
         "initial_state": copy.deepcopy(awal),
-        "final_state": state_sekarang,
-        "skor_awal": skor_awal,
-        "final_score": skor,
-        "score_history": history,
-        "total_evaluations": iterasi,
+        "final_state": best_vehicles,
+        "skor_awal": history_score[0],
+        "final_score": best_score,
+        "score_history": history_score,
+        "total_evaluations": total_iterations,
         "execution_time": lama,
     }
 
@@ -209,8 +214,21 @@ def run_experiment(show_plot=True):
     for run, seed in enumerate([1, 2, 3], start=1):
         random.seed(seed)
         print(f"\n--- EKSPERIMEN RUN {run} ---")
-        res = hill_climbing(copy.deepcopy(kendaraan_awal), kapal, 3000, 300)
-        res["run_id"] = run
+        t0 = time.process_time()
+        best_vehicles, best_score, total_iterations, history_score = stochastic_hill_climbing(
+            kendaraan_awal, kapal, max_iterations=3000, num_candidates=4
+        )
+        duration = time.process_time() - t0
+        res = {
+            "run_id": run,
+            "initial_state": copy.deepcopy(kendaraan_awal),
+            "final_state": best_vehicles,
+            "skor_awal": history_score[0],
+            "final_score": best_score,
+            "score_history": history_score,
+            "total_evaluations": total_iterations,
+            "execution_time": duration,
+        }
         hasil.append(res)
         print(f"\nHasil Akhir Run {run}:")
         print(f"Objective awal : {res['skor_awal']}")
