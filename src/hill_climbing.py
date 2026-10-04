@@ -7,39 +7,39 @@ import time
 import matplotlib.patches as patches
 import matplotlib.pyplot as plt
 
-# Memastikan modul dapat diimpor baik saat dijalankan dari root maupun dari dalam src/
+# atur path biar bisa import main dari root atau src/
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 try:
     from main import Ship, Vehicle, move, objective_function, rotate, swap
 except ImportError:
     from src.main import Ship, Vehicle, move, objective_function, rotate, swap
 
-# Tentukan direktori output relatif terhadap root repository
+# folder buat nyimpen hasil gambar
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 OUTPUT_DIR = os.path.join(BASE_DIR, "output", "hill_climbing")
 
 
-# Bikin 1 tetangga acak dari state sekarang
+# bikin 1 tetangga acak dari state sekarang
 def get_random_neighbor(vehicles, ship):
     neighbor = copy.deepcopy(vehicles)
     move_type = random.choice(["move", "swap", "rotate", "toggle_load"])
-    
-    # Move 1: geser posisi kendaraan
+
+    # aksi 1: geser posisi koordinat
     if move_type == "move":
         move(neighbor, ship)
         return neighbor
-        
-    # Move 2: tukar posisi 2 kendaraan
+
+    # aksi 2: tuker posisi 2 mobil
     if move_type == "swap":
         swap(neighbor)
         return neighbor
-        
-    # Move 3: putar arah (horizontal <-> vertikal)
+
+    # aksi 3: putar arah mobil (horizontal <-> vertikal)
     if move_type == "rotate":
         rotate(neighbor, ship)
         return neighbor
-        
-    # Move 4: naik/turun dari kapal
+
+    # aksi 4: naik/turunin mobil dari kapal
     if move_type == "toggle_load":
         v = random.choice(neighbor)
         v.is_loaded = not v.is_loaded
@@ -52,47 +52,54 @@ def get_random_neighbor(vehicles, ship):
                 v.x = random.randint(0, max_x)
                 v.y = random.randint(0, max_y)
         return neighbor
-        
+
     return neighbor
 
 
-# Stochastic Hill Climbing sesuai standar Lab
-def stochastic_hill_climbing(initial_vehicles, ship, max_iterations=3000, num_candidates=4):
+# stochastic hill climbing: pilih acak dari tetangga yang lebih bagus
+def stochastic_hill_climbing(initial_vehicles, ship, max_iterations=3000, num_candidates=4, verbose=False):
+    # inisialisasi state awal
     current_vehicles = copy.deepcopy(initial_vehicles)
     current_score = objective_function(current_vehicles, ship)
     history_score = [current_score]
     total_iterations = 0
 
+    if verbose:
+        print(f"[0] State Awal. Skor: {current_score}")
+
     while total_iterations < max_iterations:
         total_iterations += 1
         better_neighbors = []
 
-        # Sampling sekumpulan kandidat tetangga acak
+        # sampling kandidat tetangga acak
         for _ in range(num_candidates):
             candidate = get_random_neighbor(current_vehicles, ship)
             candidate_score = objective_function(candidate, ship)
             if candidate_score > current_score:
                 better_neighbors.append((candidate, candidate_score))
 
-        # Terhenti jika tidak ada kandidat yang lebih baik (stuck di local optima)
+        # berhenti kalau gak ada tetangga yang lebih baik (stuck di local optima)
         if not better_neighbors:
             break
 
-        # Pilih 1 kandidat secara acak dari kumpulan yang lebih baik
+        # pilih 1 acak dari tetangga yang lebih baik
         selected_neighbor, selected_score = random.choice(better_neighbors)
         current_vehicles = copy.deepcopy(selected_neighbor)
         current_score = selected_score
-        
+
+        # simpan history skor
         history_score.append(current_score)
+        if verbose:
+            print(f"[{total_iterations}] Pindah. Skor Baru: {current_score}")
 
     return current_vehicles, current_score, total_iterations, history_score
 
 
-# Alias fungsi untuk kompatibilitas
-def hill_climbing(awal, ship, max_eval=3000, max_stuck=300, num_candidates=4):
+# alias fungsi biar tetap jalan kalau dipanggil dengan nama lama
+def hill_climbing(awal, ship, max_eval=3000, max_stuck=300, num_candidates=4, verbose=False):
     t0 = time.process_time()
     best_vehicles, best_score, total_iterations, history_score = stochastic_hill_climbing(
-        awal, ship, max_iterations=max_eval, num_candidates=num_candidates
+        awal, ship, max_iterations=max_eval, num_candidates=num_candidates, verbose=verbose
     )
     lama = time.process_time() - t0
     return {
@@ -106,83 +113,99 @@ def hill_climbing(awal, ship, max_eval=3000, max_stuck=300, num_candidates=4):
     }
 
 
-# 1. Steepest Ascent Hill Climbing
-def steepest_ascent_hill_climbing(initial_vehicles, ship, max_iterations=3000, num_candidates=20):
+# 1. steepest ascent: pilih kandidat dengan skor tertinggi (paling curam)
+def steepest_ascent_hill_climbing(initial_vehicles, ship, max_iterations=3000, num_candidates=20, verbose=False):
+    # inisialisasi state awal
     current_vehicles = copy.deepcopy(initial_vehicles)
     current_score = objective_function(current_vehicles, ship)
     history_score = [current_score]
     total_iterations = 0
 
+    if verbose:
+        print(f"[0] State Awal. Skor: {current_score}")
+
     while total_iterations < max_iterations:
         total_iterations += 1
         better_neighbors = []
 
-        # Sampling sekumpulan kandidat tetangga acak
+        # sampling kandidat tetangga acak
         for _ in range(num_candidates):
             candidate = get_random_neighbor(current_vehicles, ship)
             candidate_score = objective_function(candidate, ship)
             if candidate_score > current_score:
                 better_neighbors.append((candidate, candidate_score))
 
-        # Terhenti jika tidak ada kandidat yang lebih baik (stuck di local optima)
+        # berhenti kalau gak nemu tetangga yang lebih baik
         if not better_neighbors:
             break
 
-        # Pilih kandidat dengan skor TERTINGGI (steepest ascent)
+        # cari tetangga terbaik (skor tertinggi)
         best_candidate, best_candidate_score = max(better_neighbors, key=lambda item: item[1])
         current_vehicles = copy.deepcopy(best_candidate)
         current_score = best_candidate_score
 
+        # simpan history skor
         history_score.append(current_score)
+        if verbose:
+            print(f"[{total_iterations}] Pindah. Skor Baru: {current_score}")
 
     return current_vehicles, current_score, total_iterations, history_score
 
 
-# 2. Hill Climbing with Sideways Move
-def sideways_move_hill_climbing(initial_vehicles, ship, max_iterations=3000, max_sideways=100, num_candidates=4):
+# 2. sideways move: boleh geser mendatar kalau skornya sama
+def sideways_move_hill_climbing(initial_vehicles, ship, max_iterations=3000, max_sideways=100, num_candidates=4, verbose=False):
+    # inisialisasi state awal
     current_vehicles = copy.deepcopy(initial_vehicles)
     current_score = objective_function(current_vehicles, ship)
     history_score = [current_score]
     total_iterations = 0
     sideways_count = 0
 
+    if verbose:
+        print(f"[0] State Awal. Skor: {current_score}")
+
     while total_iterations < max_iterations:
         total_iterations += 1
         eligible_neighbors = []
 
-        # Sampling sekumpulan kandidat tetangga acak
+        # sampling kandidat tetangga acak
         for _ in range(num_candidates):
             candidate = get_random_neighbor(current_vehicles, ship)
             candidate_score = objective_function(candidate, ship)
             if candidate_score >= current_score:
                 eligible_neighbors.append((candidate, candidate_score))
 
-        # Berhenti jika tidak ada tetangga yang >= current_score
+        # berhenti kalau gak ada tetangga >= skor sekarang
         if not eligible_neighbors:
             break
 
-        # Pilih kandidat dengan skor terbaik di antara eligible
+        # pilih tetangga dengan skor terbaik di antara yang eligible
         selected_neighbor, selected_score = max(eligible_neighbors, key=lambda item: item[1])
 
         if selected_score > current_score:
-            # Peningkatan terdeteksi: reset sideways counter
+            # skor naik: reset hitungan sideways
             sideways_count = 0
             current_vehicles = copy.deepcopy(selected_neighbor)
             current_score = selected_score
             history_score.append(current_score)
+            if verbose:
+                print(f"[{total_iterations}] Pindah. Skor Baru: {current_score}")
         else:
-            # Pergerakan mendatar (sideways move)
+            # skor sama: tambah hitungan sideways
             sideways_count += 1
+            # cek batas max_sideways biar gak muter-muter terus di plateau
             if sideways_count >= max_sideways:
                 break
             current_vehicles = copy.deepcopy(selected_neighbor)
             current_score = selected_score
             history_score.append(current_score)
+            if verbose:
+                print(f"[{total_iterations}] Pindah Samping. Skor Baru: {current_score}")
 
     return current_vehicles, current_score, total_iterations, history_score
 
 
-# Helper untuk membangkitkan state awal acak baru
+# helper buat bikin state awal acak baru untuk random restart
 def bikin_state_acak(vehicles_template, ship):
     state = copy.deepcopy(vehicles_template)
     for v in state:
@@ -200,7 +223,7 @@ def bikin_state_acak(vehicles_template, ship):
     return state
 
 
-# Class pembungkus tuple untuk random restart agar backward-compatible (4-tuple) sekaligus menyediakan history_score
+# class pembungkus tuple untuk random restart agar backward-compatible (4 elemen)
 class RandomRestartResult(tuple):
     def __new__(cls, best_vehicles, best_score, total_restarts, iterations_per_restart, history_score=None, initial_score=None):
         return super().__new__(cls, (best_vehicles, best_score, total_restarts, iterations_per_restart))
@@ -210,9 +233,9 @@ class RandomRestartResult(tuple):
         self.initial_score = initial_score
 
 
-# 3. Random Restart Hill Climbing
-def random_restart_hill_climbing(ship, max_restarts=5, max_iterations_per_restart=1000, initial_vehicles=None, num_candidates=4):
-    # Fleksibel jika dipanggil dengan urutan (initial_vehicles, ship, ...)
+# 3. random restart: ulang pencarian beberapa kali dari state awal acak
+def random_restart_hill_climbing(ship, max_restarts=5, max_iterations_per_restart=1000, initial_vehicles=None, num_candidates=4, verbose=False):
+    # fleksibel kalau urutan argumennya kebalik (initial_vehicles, ship)
     if isinstance(ship, list) and hasattr(max_restarts, "maxCapacity"):
         initial_vehicles, ship, max_restarts = ship, max_restarts, max_iterations_per_restart
 
@@ -226,12 +249,12 @@ def random_restart_hill_climbing(ship, max_restarts=5, max_iterations_per_restar
     initial_score = None
 
     for restart_idx in range(1, max_restarts + 1):
-        # Bangkitkan state awal acak baru
+        # bangkitkan state awal acak baru di tiap restart
         start_state = bikin_state_acak(initial_vehicles, ship)
 
-        # Jalankan stochastic hill climbing untuk restart ini
+        # jalankan stochastic hill climbing untuk restart kali ini
         best_v, best_s, iters, hist = stochastic_hill_climbing(
-            start_state, ship, max_iterations=max_iterations_per_restart, num_candidates=num_candidates
+            start_state, ship, max_iterations=max_iterations_per_restart, num_candidates=num_candidates, verbose=False
         )
 
         if initial_score is None and hist:
@@ -239,7 +262,7 @@ def random_restart_hill_climbing(ship, max_restarts=5, max_iterations_per_restar
 
         iterations_per_restart.append(iters)
 
-        # Catat akumulasi progres skor terbaik global
+        # catat akumulasi progres skor terbaik global
         for s in hist:
             if s > global_best_score or global_best_vehicles is None:
                 global_best_score = s
@@ -249,12 +272,16 @@ def random_restart_hill_climbing(ship, max_restarts=5, max_iterations_per_restar
             global_best_score = best_s
             global_best_vehicles = copy.deepcopy(best_v)
 
+        if verbose:
+            print(f"[{restart_idx}] Restart. Skor Baru: {global_best_score}")
+
     total_restarts = len(iterations_per_restart)
     return RandomRestartResult(
         global_best_vehicles, global_best_score, total_restarts, iterations_per_restart, cumulative_history, initial_score
     )
 
 
+# cetak daftar mobil yang naik ke kapal
 def print_output(state, ship):
     yang_naik = [v for v in state if v.is_loaded]
     total_skor = objective_function(state, ship)
@@ -271,7 +298,7 @@ def print_output(state, ship):
         print(f"Belum dimuat: {', '.join(belum)}")
 
 
-# Gambar geladak kapal
+# fungsi buat gambar denah geladak kapal
 def plot_deck(vehicles, ship, judul, ax):
     ax.set_xlim(0, ship.dimension.width)
     ax.set_ylim(0, ship.dimension.length)
@@ -317,7 +344,7 @@ def plot_deck(vehicles, ship, judul, ax):
             fontsize=8,
             fontweight="bold",
         )
-    # Yang belum naik ditaruh di sudut agar kelihatan
+    # yang belum naik ditaruh di pojok
     belum = [v.id for v in vehicles if not v.is_loaded]
     if belum:
         ax.text(
@@ -330,7 +357,7 @@ def plot_deck(vehicles, ship, judul, ax):
         )
 
 
-# Simpan plot ke folder output
+# simpan plot ke file gambar
 def simpan_gambar(gambar, nama):
     os.makedirs(OUTPUT_DIR, exist_ok=True)
     lokasi = os.path.join(OUTPUT_DIR, nama)
@@ -340,6 +367,7 @@ def simpan_gambar(gambar, nama):
     return lokasi
 
 
+# bikin data kendaraan awal buat uji coba
 def bikin_kendaraan_awal():
     v1 = Vehicle("V1", 2, 4, "Horizontal", 150, 200, 1)
     v1.x, v1.y, v1.is_loaded = 0, 0, True
@@ -349,61 +377,55 @@ def bikin_kendaraan_awal():
     return [v1, v2, v3]
 
 
+# jalanin eksperimen lengkap 4 varian hill climbing
 def run_experiment(show_plot=True):
-    random.seed(42)  # Seed tetap agar eksperimen perbandingan adil dan reproducible
-    
-    # Inisialisasi kapal & kendaraan awal
+    random.seed(42)  # seed tetap biar hasil perbandingannya adil
+
     kapal = Ship(10, 10, 1000)
     kendaraan_awal = bikin_kendaraan_awal()
     skor_awal = objective_function(kendaraan_awal, kapal)
 
-    # 1. Gambar & Simpan Initial State
+    # 1. gambar state awal
     fig_awal, ax_awal = plt.subplots(figsize=(6, 6))
     plot_deck(kendaraan_awal, kapal, f"Initial State (objective = {skor_awal})", ax_awal)
     simpan_gambar(fig_awal, "initial_state.png")
 
-    print("\n" + "=" * 65)
-    print(f"{'MENJALANKAN 4 VARIAN HILL CLIMBING':^65}")
-    print("=" * 65)
+    print("\n--- Menjalankan 4 Varian Hill Climbing ---")
 
-    # 1. Steepest Ascent Hill Climbing
-    print("\n[1/4] Menjalankan Steepest Ascent Hill Climbing...")
+    # 1. steepest ascent
+    print("\n[1/4] Steepest Ascent Hill Climbing...")
     t0 = time.process_time()
     sa_v, sa_score, sa_iter, sa_hist = steepest_ascent_hill_climbing(
-        kendaraan_awal, kapal, max_iterations=3000, num_candidates=20
+        kendaraan_awal, kapal, max_iterations=3000, num_candidates=20, verbose=True
     )
     sa_dur = time.process_time() - t0
-    print(f"      OF: {sa_hist[0]} -> {sa_score} | Iterasi: {sa_iter} | Waktu: {sa_dur:.4f}s")
 
-    # 2. Stochastic Hill Climbing
-    print("\n[2/4] Menjalankan Stochastic Hill Climbing...")
+    # 2. stochastic
+    print("\n[2/4] Stochastic Hill Climbing...")
     t0 = time.process_time()
     st_v, st_score, st_iter, st_hist = stochastic_hill_climbing(
-        kendaraan_awal, kapal, max_iterations=3000, num_candidates=4
+        kendaraan_awal, kapal, max_iterations=3000, num_candidates=4, verbose=True
     )
     st_dur = time.process_time() - t0
-    print(f"      OF: {st_hist[0]} -> {st_score} | Iterasi: {st_iter} | Waktu: {st_dur:.4f}s")
 
-    # 3. Sideways Move Hill Climbing
-    print("\n[3/4] Menjalankan Sideways Move Hill Climbing...")
+    # 3. sideways move
+    print("\n[3/4] Sideways Move Hill Climbing...")
     t0 = time.process_time()
     sw_v, sw_score, sw_iter, sw_hist = sideways_move_hill_climbing(
-        kendaraan_awal, kapal, max_iterations=3000, max_sideways=100, num_candidates=4
+        kendaraan_awal, kapal, max_iterations=3000, max_sideways=100, num_candidates=4, verbose=True
     )
     sw_dur = time.process_time() - t0
-    print(f"      OF: {sw_hist[0]} -> {sw_score} | Iterasi: {sw_iter} | Waktu: {sw_dur:.4f}s")
 
-    # 4. Random Restart Hill Climbing
-    print("\n[4/4] Menjalankan Random Restart Hill Climbing...")
+    # 4. random restart
+    print("\n[4/4] Random Restart Hill Climbing...")
     t0 = time.process_time()
     rr_res = random_restart_hill_climbing(
-        kapal, max_restarts=5, max_iterations_per_restart=1000, initial_vehicles=kendaraan_awal, num_candidates=4
+        kapal, max_restarts=5, max_iterations_per_restart=1000, initial_vehicles=kendaraan_awal, num_candidates=4, verbose=True
     )
     rr_v, rr_score, rr_restarts, rr_iters = rr_res
     rr_hist = rr_res.history_score
     rr_init_of = rr_res.initial_score if rr_res.initial_score is not None else skor_awal
     rr_dur = time.process_time() - t0
-    print(f"      OF: {rr_init_of} -> {rr_score} | Restarts: {rr_restarts} (total {sum(rr_iters)} iter) | Waktu: {rr_dur:.4f}s")
 
     hasil_eksperimen = [
         {
@@ -456,12 +478,12 @@ def run_experiment(show_plot=True):
         },
     ]
 
-    # Cetak detail muatan masing-masing algoritma
+    # cetak detail mobil tiap algoritma
     for item in hasil_eksperimen:
         print(f"\n--- Hasil {item['nama']} ---")
         print_output(item["final_state"], kapal)
 
-    # 2. Gambar 4 final state sekaligus (1 baris x 4 kolom)
+    # 2. gambar 4 state akhir berdampingan
     fig_akhir, axes_akhir = plt.subplots(1, 4, figsize=(20, 5))
     for item, ax in zip(hasil_eksperimen, axes_akhir):
         plot_deck(
@@ -472,7 +494,7 @@ def run_experiment(show_plot=True):
         )
     simpan_gambar(fig_akhir, "final_state.png")
 
-    # 3. Plot skor vs iterasi dari ke-4 algoritma
+    # 3. plot perbandingan skor vs iterasi
     fig_plot, ax_plot = plt.subplots(figsize=(10, 5.5))
     for item in hasil_eksperimen:
         ax_plot.plot(
@@ -486,17 +508,17 @@ def run_experiment(show_plot=True):
             linewidth=2,
             alpha=0.85,
         )
-    ax_plot.set_title("Perbandingan Objective Function vs Iterasi (4 Varian Hill Climbing)", fontsize=12, fontweight="bold")
+    ax_plot.set_title("Perbandingan Objective Function vs Iterasi (4 Varian Hill Climbing)", fontsize=12)
     ax_plot.set_xlabel("Iterasi", fontsize=10)
     ax_plot.set_ylabel("Objective Function (Total Shipping Fee)", fontsize=10)
     ax_plot.grid(True, linestyle="--", alpha=0.5)
     ax_plot.legend(loc="lower right", fontsize=10)
     simpan_gambar(fig_plot, "objective_vs_iterasi.png")
 
-    # 4. Tabel hasil eksperimen perbandingan ke-4 algoritma
+    # 4. tabel perbandingan hasil eksperimen
     fig_tab, ax_tab = plt.subplots(figsize=(11, 3.2))
     ax_tab.axis("off")
-    ax_tab.set_title("Perbandingan Performa 4 Varian Hill Climbing", fontsize=12, fontweight="bold", pad=12)
+    ax_tab.set_title("Perbandingan Performa 4 Varian Hill Climbing", fontsize=12, pad=12)
     isi_tabel = []
     for item in hasil_eksperimen:
         isi_tabel.append([
@@ -521,62 +543,61 @@ def run_experiment(show_plot=True):
         cell.set_text_props(weight="bold", color="white")
     simpan_gambar(fig_tab, "hasil_eksperimen.png")
 
-    print("\n" + "=" * 68)
-    print(f"{'RINGKASAN PERBANDINGAN 4 VARIAN HILL CLIMBING':^68}")
-    print("=" * 68)
+    # ringkasan tabel di terminal
+    print("\n--- Ringkasan Hasil Eksperimen ---")
     print(f"{'Algoritma':<18} | {'OF Awal':<8} | {'OF Akhir':<8} | {'Iterasi / Restart':<26} | {'Durasi'}")
     print("-" * 68)
     for item in hasil_eksperimen:
         print(f"{item['nama']:<18} | {item['skor_awal']:<8} | {item['final_score']:<8} | {item['iterasi_info']:<26} | {item['durasi']:.4f}s")
-    print("=" * 68)
 
 
+# verifikasi 4 varian hill climbing sesuai spek tugas lab
 def verify_all_hill_climbing():
-    print("\n" + "=" * 68)
-    print(f"{'VERIFIKASI ATURAN RESMI LABORATORIUM (4 VARIAN HC)':^68}")
-    print("=" * 68)
+    print("Mulai pengujian 4 varian Hill Climbing...")
 
     kapal = Ship(10, 10, 1000)
     kendaraan = bikin_kendaraan_awal()
 
-    # 1. Verifikasi Steepest Ascent
-    sa_v, sa_s, sa_iter, sa_hist = steepest_ascent_hill_climbing(kendaraan, kapal, max_iterations=100, num_candidates=20)
+    # 1. verifikasi steepest ascent
+    random.seed(42)
+    sa_v, sa_s, sa_iter, sa_hist = steepest_ascent_hill_climbing(kendaraan, kapal, max_iterations=100, num_candidates=20, verbose=False)
     assert isinstance(sa_iter, int) and sa_iter >= 1, "Steepest Ascent harus mencatat total iterasi >= 1"
     assert all(sa_hist[i] <= sa_hist[i + 1] for i in range(len(sa_hist) - 1)), "History Steepest Ascent harus monoton naik"
-    print(f"[OK] Steepest Ascent Rules Passed: Total iterasi dicatat ({sa_iter} iterasi), pemilihan kandidat tertinggi (argmax), skor akhir={sa_s}.")
+    print(f"- Steepest Ascent: PASSED (Iterasi: {sa_iter}, Skor: {sa_s})")
 
-    # 2. Verifikasi Stochastic
-    st_v, st_s, st_iter, st_hist = stochastic_hill_climbing(kendaraan, kapal, max_iterations=100, num_candidates=4)
+    # 2. verifikasi stochastic
+    random.seed(42)
+    st_v, st_s, st_iter, st_hist = stochastic_hill_climbing(kendaraan, kapal, max_iterations=100, num_candidates=4, verbose=False)
     assert isinstance(st_iter, int) and st_iter >= 1, "Stochastic HC harus mencatat total iterasi >= 1"
     assert all(st_hist[i] <= st_hist[i + 1] for i in range(len(st_hist) - 1)), "History Stochastic HC harus monoton naik"
-    print(f"[OK] Stochastic Hill Climbing Rules Passed: Pemilihan acak dari tetangga yang lebih baik (candidate > current), berhenti di local optima ({st_iter} iterasi).")
+    print(f"- Stochastic: PASSED (Iterasi: {st_iter}, Skor: {st_s})")
 
-    # 3. Verifikasi Sideways Move
+    # 3. verifikasi sideways move
+    random.seed(8)
     max_side = 5
-    sw_v, sw_s, sw_iter, sw_hist = sideways_move_hill_climbing(kendaraan, kapal, max_iterations=100, max_sideways=max_side, num_candidates=4)
+    sw_v, sw_s, sw_iter, sw_hist = sideways_move_hill_climbing(kendaraan, kapal, max_iterations=100, max_sideways=max_side, num_candidates=4, verbose=False)
     assert isinstance(sw_iter, int) and sw_iter >= 1, "Sideways Move harus mencatat total iterasi >= 1"
     assert all(sw_hist[i] <= sw_hist[i + 1] for i in range(len(sw_hist) - 1)), "History Sideways Move tidak boleh anjlok"
-    print(f"[OK] Sideways Move Rules Passed: Menerima candidate_score >= current_score, parameter max_sideways={max_side} membatasi plateau.")
+    print(f"- Sideways Move: PASSED (Iterasi: {sw_iter}, Max Sideways: {max_side}, Skor: {sw_s})")
 
-    # 4. Verifikasi Random Restart
+    # 4. verifikasi random restart
+    random.seed(0)
     restarts_target = 3
-    rr_res = random_restart_hill_climbing(kapal, max_restarts=restarts_target, max_iterations_per_restart=50, initial_vehicles=kendaraan)
+    rr_res = random_restart_hill_climbing(kapal, max_restarts=restarts_target, max_iterations_per_restart=50, initial_vehicles=kendaraan, verbose=False)
     rr_v, rr_s, rr_total_r, rr_iters = rr_res
     assert rr_total_r == restarts_target, f"Banyak restart harus tepat {restarts_target}"
     assert len(rr_iters) == restarts_target, "Harus mencatat banyak iterasi untuk setiap restart"
     assert rr_s >= 0, "Harus melacak global best score"
-    print(f"[OK] Random Restart Rules Passed: Berhenti saat mencapai max_restarts={restarts_target}, iterasi per restart={rr_iters}, best global={rr_s}.")
+    print(f"- Random Restart: PASSED (Restarts: {restarts_target}, Skor: {rr_s})")
 
-    # 5. Verifikasi Output Visualisasi
+    # 5. verifikasi ketersediaan file output visualisasi
     required_files = ["final_state.png", "hasil_eksperimen.png", "objective_vs_iterasi.png"]
     for fname in required_files:
         fpath = os.path.join(OUTPUT_DIR, fname)
         assert os.path.exists(fpath), f"File {fname} tidak ditemukan di {OUTPUT_DIR}"
-    print(f"[OK] Output Verification Passed: Semua file ({', '.join(required_files)}) tersedia di {OUTPUT_DIR}.")
+    print("- Output visualisasi: OK\n")
 
-    print("=" * 68)
-    print(f"{'ALL 4 HILL CLIMBING VARIANTS PASSED VERIFICATION!':^68}")
-    print("=" * 68 + "\n")
+    print("Semua verifikasi berhasil.")
 
 
 if __name__ == "__main__":
@@ -585,4 +606,5 @@ if __name__ == "__main__":
     else:
         show = "--no-show" not in sys.argv
         run_experiment(show_plot=show)
+        print()
         verify_all_hill_climbing()
