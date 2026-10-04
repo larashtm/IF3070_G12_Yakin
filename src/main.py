@@ -122,6 +122,9 @@ def rotate(vehicles: list[Vehicle]):
 def display(vehicles: list[Vehicle], ship: Ship):
     map = [["." for i in range(ship.dimension.width)]
            for i in range(ship.dimension.length)]
+    
+    if exceed_ship_limit(vehicles, ship):
+        return
 
     for v in vehicles:
         if v.is_loaded:
