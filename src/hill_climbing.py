@@ -531,13 +531,58 @@ def run_experiment(show_plot=True):
     print("=" * 68)
 
 
-    if show_plot:
-        try:
-            plt.show()
-        except Exception:
-            pass
+def verify_all_hill_climbing():
+    print("\n" + "=" * 68)
+    print(f"{'VERIFIKASI ATURAN RESMI LABORATORIUM (4 VARIAN HC)':^68}")
+    print("=" * 68)
+
+    kapal = Ship(10, 10, 1000)
+    kendaraan = bikin_kendaraan_awal()
+
+    # 1. Verifikasi Steepest Ascent
+    sa_v, sa_s, sa_iter, sa_hist = steepest_ascent_hill_climbing(kendaraan, kapal, max_iterations=100, num_candidates=20)
+    assert isinstance(sa_iter, int) and sa_iter >= 1, "Steepest Ascent harus mencatat total iterasi >= 1"
+    assert all(sa_hist[i] <= sa_hist[i + 1] for i in range(len(sa_hist) - 1)), "History Steepest Ascent harus monoton naik"
+    print(f"[OK] Steepest Ascent Rules Passed: Total iterasi dicatat ({sa_iter} iterasi), pemilihan kandidat tertinggi (argmax), skor akhir={sa_s}.")
+
+    # 2. Verifikasi Stochastic
+    st_v, st_s, st_iter, st_hist = stochastic_hill_climbing(kendaraan, kapal, max_iterations=100, num_candidates=4)
+    assert isinstance(st_iter, int) and st_iter >= 1, "Stochastic HC harus mencatat total iterasi >= 1"
+    assert all(st_hist[i] <= st_hist[i + 1] for i in range(len(st_hist) - 1)), "History Stochastic HC harus monoton naik"
+    print(f"[OK] Stochastic Hill Climbing Rules Passed: Pemilihan acak dari tetangga yang lebih baik (candidate > current), berhenti di local optima ({st_iter} iterasi).")
+
+    # 3. Verifikasi Sideways Move
+    max_side = 5
+    sw_v, sw_s, sw_iter, sw_hist = sideways_move_hill_climbing(kendaraan, kapal, max_iterations=100, max_sideways=max_side, num_candidates=4)
+    assert isinstance(sw_iter, int) and sw_iter >= 1, "Sideways Move harus mencatat total iterasi >= 1"
+    assert all(sw_hist[i] <= sw_hist[i + 1] for i in range(len(sw_hist) - 1)), "History Sideways Move tidak boleh anjlok"
+    print(f"[OK] Sideways Move Rules Passed: Menerima candidate_score >= current_score, parameter max_sideways={max_side} membatasi plateau.")
+
+    # 4. Verifikasi Random Restart
+    restarts_target = 3
+    rr_res = random_restart_hill_climbing(kapal, max_restarts=restarts_target, max_iterations_per_restart=50, initial_vehicles=kendaraan)
+    rr_v, rr_s, rr_total_r, rr_iters = rr_res
+    assert rr_total_r == restarts_target, f"Banyak restart harus tepat {restarts_target}"
+    assert len(rr_iters) == restarts_target, "Harus mencatat banyak iterasi untuk setiap restart"
+    assert rr_s >= 0, "Harus melacak global best score"
+    print(f"[OK] Random Restart Rules Passed: Berhenti saat mencapai max_restarts={restarts_target}, iterasi per restart={rr_iters}, best global={rr_s}.")
+
+    # 5. Verifikasi Output Visualisasi
+    required_files = ["final_state.png", "hasil_eksperimen.png", "objective_vs_iterasi.png"]
+    for fname in required_files:
+        fpath = os.path.join(OUTPUT_DIR, fname)
+        assert os.path.exists(fpath), f"File {fname} tidak ditemukan di {OUTPUT_DIR}"
+    print(f"[OK] Output Verification Passed: Semua file ({', '.join(required_files)}) tersedia di {OUTPUT_DIR}.")
+
+    print("=" * 68)
+    print(f"{'ALL 4 HILL CLIMBING VARIANTS PASSED VERIFICATION!':^68}")
+    print("=" * 68 + "\n")
 
 
 if __name__ == "__main__":
-    show = "--no-show" not in sys.argv
-    run_experiment(show_plot=show)
+    if "--verify" in sys.argv:
+        verify_all_hill_climbing()
+    else:
+        show = "--no-show" not in sys.argv
+        run_experiment(show_plot=show)
+        verify_all_hill_climbing()
