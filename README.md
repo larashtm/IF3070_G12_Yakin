@@ -1,8 +1,6 @@
 # Tugas Besar 1
 # IF3070 Dasar Inteligensi Artifisial 2026/2027
 
-# Tugas Besar 1 IF3070 Dasar Inteligensi Artifisial
-
 ## Penjelasan Tugas
 
 **Vessel Loading Problem** merupakan masalah terkait penempatan kendaraan (*vehicles*) pada kapal (*ship*). Pada permasalahan ini, setiap kendaraan memiliki atribut-atribut yaitu ID, ukuran, orientasi, berat, biaya pengiriman, dan waktu kedatangan. Kendaraan dapat ditempatkan di dalam kapal dengan posisi tertentu atau tidak dimuat apabila *out of bounds*.
@@ -29,10 +27,16 @@ State *neighbor* dapat didapatkan melalui:
 1. Lakukan clone repository
    ```bash
    git clone https://github.com/larashtm/IF3070_G12_Yakin
-3. Buka folder hasil clone cd IFIF3070_G12_Yakin
-4. Buka folder dan src folder cd src
-5. Ubah dictionary dari barang yang akan dimasukkan ke kontainer dengan mengubah file kontainer.json
-6. Jalankan program main dari kode python main.py
+3. Buka folder hasil clone
+   ```bash
+   cd IFIF3070_G12_Yakin
+5. Buka folder dan src folder
+   ```bash
+   cd src
+7. Ubah dictionary dari barang yang akan dimasukkan ke kontainer dengan mengubah file kontainer.json
+8. Jalankan program main dari kode python di file main
+   ```bash
+   main.py
 
 
 ## Authors
