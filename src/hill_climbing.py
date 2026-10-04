@@ -200,6 +200,16 @@ def bikin_state_acak(vehicles_template, ship):
     return state
 
 
+# Class pembungkus tuple untuk random restart agar backward-compatible (4-tuple) sekaligus menyediakan history_score
+class RandomRestartResult(tuple):
+    def __new__(cls, best_vehicles, best_score, total_restarts, iterations_per_restart, history_score=None, initial_score=None):
+        return super().__new__(cls, (best_vehicles, best_score, total_restarts, iterations_per_restart))
+
+    def __init__(self, best_vehicles, best_score, total_restarts, iterations_per_restart, history_score=None, initial_score=None):
+        self.history_score = history_score if history_score is not None else [best_score]
+        self.initial_score = initial_score
+
+
 # 3. Random Restart Hill Climbing
 def random_restart_hill_climbing(ship, max_restarts=5, max_iterations_per_restart=1000, initial_vehicles=None, num_candidates=4):
     # Fleksibel jika dipanggil dengan urutan (initial_vehicles, ship, ...)
@@ -212,24 +222,37 @@ def random_restart_hill_climbing(ship, max_restarts=5, max_iterations_per_restar
     global_best_vehicles = None
     global_best_score = -1
     iterations_per_restart = []
+    cumulative_history = []
+    initial_score = None
 
     for restart_idx in range(1, max_restarts + 1):
         # Bangkitkan state awal acak baru
         start_state = bikin_state_acak(initial_vehicles, ship)
 
         # Jalankan stochastic hill climbing untuk restart ini
-        best_v, best_s, iters, _ = stochastic_hill_climbing(
+        best_v, best_s, iters, hist = stochastic_hill_climbing(
             start_state, ship, max_iterations=max_iterations_per_restart, num_candidates=num_candidates
         )
 
+        if initial_score is None and hist:
+            initial_score = hist[0]
+
         iterations_per_restart.append(iters)
+
+        # Catat akumulasi progres skor terbaik global
+        for s in hist:
+            if s > global_best_score or global_best_vehicles is None:
+                global_best_score = s
+            cumulative_history.append(global_best_score)
 
         if best_s > global_best_score or global_best_vehicles is None:
             global_best_score = best_s
             global_best_vehicles = copy.deepcopy(best_v)
 
     total_restarts = len(iterations_per_restart)
-    return global_best_vehicles, global_best_score, total_restarts, iterations_per_restart
+    return RandomRestartResult(
+        global_best_vehicles, global_best_score, total_restarts, iterations_per_restart, cumulative_history, initial_score
+    )
 
 
 def print_output(state, ship):
@@ -327,98 +350,186 @@ def bikin_kendaraan_awal():
 
 
 def run_experiment(show_plot=True):
+    random.seed(42)  # Seed tetap agar eksperimen perbandingan adil dan reproducible
+    
     # Inisialisasi kapal & kendaraan awal
     kapal = Ship(10, 10, 1000)
     kendaraan_awal = bikin_kendaraan_awal()
     skor_awal = objective_function(kendaraan_awal, kapal)
-    
+
+    # 1. Gambar & Simpan Initial State
     fig_awal, ax_awal = plt.subplots(figsize=(6, 6))
     plot_deck(kendaraan_awal, kapal, f"Initial State (objective = {skor_awal})", ax_awal)
     simpan_gambar(fig_awal, "initial_state.png")
-    
-    hasil = []
-    for run, seed in enumerate([1, 2, 3], start=1):
-        random.seed(seed)
-        print(f"\n--- EKSPERIMEN RUN {run} ---")
-        t0 = time.process_time()
-        best_vehicles, best_score, total_iterations, history_score = stochastic_hill_climbing(
-            kendaraan_awal, kapal, max_iterations=3000, num_candidates=4
-        )
-        duration = time.process_time() - t0
-        res = {
-            "run_id": run,
-            "initial_state": copy.deepcopy(kendaraan_awal),
-            "final_state": best_vehicles,
-            "skor_awal": history_score[0],
-            "final_score": best_score,
-            "score_history": history_score,
-            "total_evaluations": total_iterations,
-            "execution_time": duration,
-        }
-        hasil.append(res)
-        print(f"\nHasil Akhir Run {run}:")
-        print(f"Objective awal : {res['skor_awal']}")
-        print(f"Objective akhir: {res['final_score']}")
-        print(f"Jumlah iterasi : {res['total_evaluations']}")
-        print(f"Durasi         : {res['execution_time']:.4f} detik")
-        print_output(res["final_state"], kapal)
 
-    # Gambar 3 final state sekaligus
-    fig_akhir, axes_akhir = plt.subplots(1, 3, figsize=(15, 5))
-    for res, ax in zip(hasil, axes_akhir):
+    print("\n" + "=" * 65)
+    print(f"{'MENJALANKAN 4 VARIAN HILL CLIMBING':^65}")
+    print("=" * 65)
+
+    # 1. Steepest Ascent Hill Climbing
+    print("\n[1/4] Menjalankan Steepest Ascent Hill Climbing...")
+    t0 = time.process_time()
+    sa_v, sa_score, sa_iter, sa_hist = steepest_ascent_hill_climbing(
+        kendaraan_awal, kapal, max_iterations=3000, num_candidates=20
+    )
+    sa_dur = time.process_time() - t0
+    print(f"      OF: {sa_hist[0]} -> {sa_score} | Iterasi: {sa_iter} | Waktu: {sa_dur:.4f}s")
+
+    # 2. Stochastic Hill Climbing
+    print("\n[2/4] Menjalankan Stochastic Hill Climbing...")
+    t0 = time.process_time()
+    st_v, st_score, st_iter, st_hist = stochastic_hill_climbing(
+        kendaraan_awal, kapal, max_iterations=3000, num_candidates=4
+    )
+    st_dur = time.process_time() - t0
+    print(f"      OF: {st_hist[0]} -> {st_score} | Iterasi: {st_iter} | Waktu: {st_dur:.4f}s")
+
+    # 3. Sideways Move Hill Climbing
+    print("\n[3/4] Menjalankan Sideways Move Hill Climbing...")
+    t0 = time.process_time()
+    sw_v, sw_score, sw_iter, sw_hist = sideways_move_hill_climbing(
+        kendaraan_awal, kapal, max_iterations=3000, max_sideways=100, num_candidates=4
+    )
+    sw_dur = time.process_time() - t0
+    print(f"      OF: {sw_hist[0]} -> {sw_score} | Iterasi: {sw_iter} | Waktu: {sw_dur:.4f}s")
+
+    # 4. Random Restart Hill Climbing
+    print("\n[4/4] Menjalankan Random Restart Hill Climbing...")
+    t0 = time.process_time()
+    rr_res = random_restart_hill_climbing(
+        kapal, max_restarts=5, max_iterations_per_restart=1000, initial_vehicles=kendaraan_awal, num_candidates=4
+    )
+    rr_v, rr_score, rr_restarts, rr_iters = rr_res
+    rr_hist = rr_res.history_score
+    rr_init_of = rr_res.initial_score if rr_res.initial_score is not None else skor_awal
+    rr_dur = time.process_time() - t0
+    print(f"      OF: {rr_init_of} -> {rr_score} | Restarts: {rr_restarts} (total {sum(rr_iters)} iter) | Waktu: {rr_dur:.4f}s")
+
+    hasil_eksperimen = [
+        {
+            "nama": "Steepest Ascent",
+            "final_state": sa_v,
+            "skor_awal": sa_hist[0],
+            "final_score": sa_score,
+            "iterasi_info": f"{sa_iter} iterasi",
+            "durasi": sa_dur,
+            "history": sa_hist,
+            "color": "#1f77b4",
+            "marker": "o",
+            "linestyle": "-",
+        },
+        {
+            "nama": "Stochastic",
+            "final_state": st_v,
+            "skor_awal": st_hist[0],
+            "final_score": st_score,
+            "iterasi_info": f"{st_iter} iterasi",
+            "durasi": st_dur,
+            "history": st_hist,
+            "color": "#2ca02c",
+            "marker": "s",
+            "linestyle": "--",
+        },
+        {
+            "nama": "Sideways Move",
+            "final_state": sw_v,
+            "skor_awal": sw_hist[0],
+            "final_score": sw_score,
+            "iterasi_info": f"{sw_iter} iterasi",
+            "durasi": sw_dur,
+            "history": sw_hist,
+            "color": "#ff7f0e",
+            "marker": "^",
+            "linestyle": "-.",
+        },
+        {
+            "nama": "Random Restart",
+            "final_state": rr_v,
+            "skor_awal": rr_init_of,
+            "final_score": rr_score,
+            "iterasi_info": f"{sum(rr_iters)} iter ({rr_restarts} restarts)",
+            "durasi": rr_dur,
+            "history": rr_hist,
+            "color": "#9467bd",
+            "marker": "D",
+            "linestyle": ":",
+        },
+    ]
+
+    # Cetak detail muatan masing-masing algoritma
+    for item in hasil_eksperimen:
+        print(f"\n--- Hasil {item['nama']} ---")
+        print_output(item["final_state"], kapal)
+
+    # 2. Gambar 4 final state sekaligus (1 baris x 4 kolom)
+    fig_akhir, axes_akhir = plt.subplots(1, 4, figsize=(20, 5))
+    for item, ax in zip(hasil_eksperimen, axes_akhir):
         plot_deck(
-            res["final_state"],
+            item["final_state"],
             kapal,
-            f"Final State Run {res['run_id']}\nobjective = {res['final_score']}",
+            f"{item['nama']}\nObjective = {item['final_score']}",
             ax,
         )
     simpan_gambar(fig_akhir, "final_state.png")
 
-    # Plot skor vs iterasi
-    fig_plot, ax_plot = plt.subplots(figsize=(9, 5))
-    for res in hasil:
+    # 3. Plot skor vs iterasi dari ke-4 algoritma
+    fig_plot, ax_plot = plt.subplots(figsize=(10, 5.5))
+    for item in hasil_eksperimen:
         ax_plot.plot(
-            range(len(res["score_history"])),
-            res["score_history"],
-            marker="o",
-            markersize=3,
-            linewidth=1.5,
-            label=f"Run {res['run_id']}",
+            range(len(item["history"])),
+            item["history"],
+            label=f"{item['nama']} (Akhir: {item['final_score']})",
+            color=item["color"],
+            linestyle=item["linestyle"],
+            marker=item["marker"],
+            markersize=5,
+            linewidth=2,
+            alpha=0.85,
         )
-    ax_plot.set_title("Objective Function vs Jumlah Iterasi")
-    ax_plot.set_xlabel("Iterasi")
-    ax_plot.set_ylabel("Objective Function")
-    ax_plot.grid(True, linestyle="--", alpha=0.4)
-    ax_plot.legend()
+    ax_plot.set_title("Perbandingan Objective Function vs Iterasi (4 Varian Hill Climbing)", fontsize=12, fontweight="bold")
+    ax_plot.set_xlabel("Iterasi", fontsize=10)
+    ax_plot.set_ylabel("Objective Function (Total Shipping Fee)", fontsize=10)
+    ax_plot.grid(True, linestyle="--", alpha=0.5)
+    ax_plot.legend(loc="lower right", fontsize=10)
     simpan_gambar(fig_plot, "objective_vs_iterasi.png")
 
-    # Tabel hasil eksperimen 
-    fig_tab, ax_tab = plt.subplots(figsize=(10, 2.8))
+    # 4. Tabel hasil eksperimen perbandingan ke-4 algoritma
+    fig_tab, ax_tab = plt.subplots(figsize=(11, 3.2))
     ax_tab.axis("off")
-    ax_tab.set_title("Hasil Eksperimen Stochastic Hill Climbing")
+    ax_tab.set_title("Perbandingan Performa 4 Varian Hill Climbing", fontsize=12, fontweight="bold", pad=12)
     isi_tabel = []
-    for res in hasil:
+    for item in hasil_eksperimen:
         isi_tabel.append([
-            f"Run {res['run_id']}",
-            str(res["skor_awal"]),
-            str(res["final_score"]),
-            str(res["total_evaluations"]),
-            f"{res['execution_time']:.4f} s",
+            item["nama"],
+            str(item["skor_awal"]),
+            str(item["final_score"]),
+            item["iterasi_info"],
+            f"{item['durasi']:.4f} s",
         ])
     tabel = ax_tab.table(
         cellText=isi_tabel,
-        colLabels=["Run", "OF Awal", "OF Akhir", "Iterasi", "Durasi"],
+        colLabels=["Algoritma", "OF Awal", "OF Akhir", "Iterasi / Restart", "Durasi"],
         loc="center",
+        cellLoc="center",
     )
-    tabel.scale(1.2, 1.6)
+    tabel.auto_set_font_size(False)
+    tabel.set_fontsize(10)
+    tabel.scale(1.2, 1.8)
+    for col_idx in range(5):
+        cell = tabel[0, col_idx]
+        cell.set_facecolor("#4A90E2")
+        cell.set_text_props(weight="bold", color="white")
     simpan_gambar(fig_tab, "hasil_eksperimen.png")
 
-    print("\n===== RINGKASAN EKSPERIMEN =====")
-    for res in hasil:
-        print(
-            f"Run {res['run_id']}: OF {res['skor_awal']} -> {res['final_score']}, "
-            f"iterasi={res['total_evaluations']}, durasi={res['execution_time']:.4f}s"
-        )
+    print("\n" + "=" * 68)
+    print(f"{'RINGKASAN PERBANDINGAN 4 VARIAN HILL CLIMBING':^68}")
+    print("=" * 68)
+    print(f"{'Algoritma':<18} | {'OF Awal':<8} | {'OF Akhir':<8} | {'Iterasi / Restart':<26} | {'Durasi'}")
+    print("-" * 68)
+    for item in hasil_eksperimen:
+        print(f"{item['nama']:<18} | {item['skor_awal']:<8} | {item['final_score']:<8} | {item['iterasi_info']:<26} | {item['durasi']:.4f}s")
+    print("=" * 68)
+
 
     if show_plot:
         try:
