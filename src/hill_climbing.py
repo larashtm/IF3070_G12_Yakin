@@ -72,18 +72,21 @@ def hill_climbing(awal, ship, max_eval=3000, max_stuck=300):
     
     while iterasi < max_eval and stuck < max_stuck:
         iterasi += 1
+        # Gunakan copy.deepcopy() saat membuat neighbor agar tidak terjadi in-place mutation
         tetangga = get_random_neighbor(state_sekarang, ship)
         skor_tetangga = objective_function(tetangga, ship)
-        history.append(skor_tetangga)
         
-        # Kalau dapat yang lebih bagus, pindah
+        # Kriteria penerimaan solusi: current_state HANYA di-update jika neighbor_score > current_score
         if skor_tetangga > skor:
-            state_sekarang = tetangga
+            state_sekarang = copy.deepcopy(tetangga)
             skor = skor_tetangga
             stuck = 0
             print(f"[{iterasi}] Pindah. Skor Baru: {skor}")
         else:
             stuck += 1
+
+        # List history mencatat current_score (skor terbaik saat itu di setiap iterasi), BUKAN neighbor_score acaknya
+        history.append(skor)
             
     lama = time.process_time() - t0
     skor_awal = history[0]
