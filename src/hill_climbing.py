@@ -106,6 +106,132 @@ def hill_climbing(awal, ship, max_eval=3000, max_stuck=300, num_candidates=4):
     }
 
 
+# 1. Steepest Ascent Hill Climbing
+def steepest_ascent_hill_climbing(initial_vehicles, ship, max_iterations=3000, num_candidates=20):
+    current_vehicles = copy.deepcopy(initial_vehicles)
+    current_score = objective_function(current_vehicles, ship)
+    history_score = [current_score]
+    total_iterations = 0
+
+    while total_iterations < max_iterations:
+        total_iterations += 1
+        better_neighbors = []
+
+        # Sampling sekumpulan kandidat tetangga acak
+        for _ in range(num_candidates):
+            candidate = get_random_neighbor(current_vehicles, ship)
+            candidate_score = objective_function(candidate, ship)
+            if candidate_score > current_score:
+                better_neighbors.append((candidate, candidate_score))
+
+        # Terhenti jika tidak ada kandidat yang lebih baik (stuck di local optima)
+        if not better_neighbors:
+            break
+
+        # Pilih kandidat dengan skor TERTINGGI (steepest ascent)
+        best_candidate, best_candidate_score = max(better_neighbors, key=lambda item: item[1])
+        current_vehicles = copy.deepcopy(best_candidate)
+        current_score = best_candidate_score
+
+        history_score.append(current_score)
+
+    return current_vehicles, current_score, total_iterations, history_score
+
+
+# 2. Hill Climbing with Sideways Move
+def sideways_move_hill_climbing(initial_vehicles, ship, max_iterations=3000, max_sideways=100, num_candidates=4):
+    current_vehicles = copy.deepcopy(initial_vehicles)
+    current_score = objective_function(current_vehicles, ship)
+    history_score = [current_score]
+    total_iterations = 0
+    sideways_count = 0
+
+    while total_iterations < max_iterations:
+        total_iterations += 1
+        eligible_neighbors = []
+
+        # Sampling sekumpulan kandidat tetangga acak
+        for _ in range(num_candidates):
+            candidate = get_random_neighbor(current_vehicles, ship)
+            candidate_score = objective_function(candidate, ship)
+            if candidate_score >= current_score:
+                eligible_neighbors.append((candidate, candidate_score))
+
+        # Berhenti jika tidak ada tetangga yang >= current_score
+        if not eligible_neighbors:
+            break
+
+        # Pilih kandidat dengan skor terbaik di antara eligible
+        selected_neighbor, selected_score = max(eligible_neighbors, key=lambda item: item[1])
+
+        if selected_score > current_score:
+            # Peningkatan terdeteksi: reset sideways counter
+            sideways_count = 0
+            current_vehicles = copy.deepcopy(selected_neighbor)
+            current_score = selected_score
+            history_score.append(current_score)
+        else:
+            # Pergerakan mendatar (sideways move)
+            sideways_count += 1
+            if sideways_count >= max_sideways:
+                break
+            current_vehicles = copy.deepcopy(selected_neighbor)
+            current_score = selected_score
+            history_score.append(current_score)
+
+    return current_vehicles, current_score, total_iterations, history_score
+
+
+# Helper untuk membangkitkan state awal acak baru
+def bikin_state_acak(vehicles_template, ship):
+    state = copy.deepcopy(vehicles_template)
+    for v in state:
+        v.is_loaded = random.choice([True, False])
+        v.orientation = random.choice(["Horizontal", "Vertical"])
+        if v.orientation == "Vertical" and v.dimension.width > v.dimension.length:
+            v.dimension.width, v.dimension.length = v.dimension.length, v.dimension.width
+        elif v.orientation == "Horizontal" and v.dimension.length > v.dimension.width:
+            v.dimension.width, v.dimension.length = v.dimension.length, v.dimension.width
+
+        max_x = max(0, ship.dimension.width - v.dimension.width)
+        max_y = max(0, ship.dimension.length - v.dimension.length)
+        v.x = random.randint(0, max_x)
+        v.y = random.randint(0, max_y)
+    return state
+
+
+# 3. Random Restart Hill Climbing
+def random_restart_hill_climbing(ship, max_restarts=5, max_iterations_per_restart=1000, initial_vehicles=None, num_candidates=4):
+    # Fleksibel jika dipanggil dengan urutan (initial_vehicles, ship, ...)
+    if isinstance(ship, list) and hasattr(max_restarts, "maxCapacity"):
+        initial_vehicles, ship, max_restarts = ship, max_restarts, max_iterations_per_restart
+
+    if initial_vehicles is None:
+        initial_vehicles = bikin_kendaraan_awal()
+
+    global_best_vehicles = None
+    global_best_score = -1
+    iterations_per_restart = []
+
+    for restart_idx in range(1, max_restarts + 1):
+        # Bangkitkan state awal acak baru
+        start_state = bikin_state_acak(initial_vehicles, ship)
+
+        # Jalankan stochastic hill climbing untuk restart ini
+        best_v, best_s, iters, _ = stochastic_hill_climbing(
+            start_state, ship, max_iterations=max_iterations_per_restart, num_candidates=num_candidates
+        )
+
+        iterations_per_restart.append(iters)
+
+        if best_s > global_best_score or global_best_vehicles is None:
+            global_best_score = best_s
+            global_best_vehicles = copy.deepcopy(best_v)
+
+    total_restarts = len(iterations_per_restart)
+    return global_best_vehicles, global_best_score, total_restarts, iterations_per_restart
+
+
 def print_output(state, ship):
     yang_naik = [v for v in state if v.is_loaded]
     total_skor = objective_function(state, ship)
