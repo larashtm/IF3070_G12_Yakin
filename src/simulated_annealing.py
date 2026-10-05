@@ -1,4 +1,4 @@
-import main, random, copy, math
+import utils, random, copy, math
 
 #inisialisasi state, random
 #rumus, temp, 0.5
@@ -11,28 +11,27 @@ def get_neighbor(vehicles, ship):
     neighbor = copy.deepcopy(vehicles)
     action = random.choice(["swap", "move", "rotate"])
     if action == "swap":
-        main.swap(get_neighbor)
+        utils.swap(neighbor, ship)
     elif action == "move":
-        main.move(neighbor, ship)
+        utils.move(neighbor, ship)
     else: #action == "rotate"
-        main.rotate(neighbor)
+        utils.rotate(neighbor, ship)
     return neighbor
-
 
 def simulated_annealing(initial_state, ship, max_iter=100, init_temp=100, cooling_rate=0.99):
     #initialize
     #yang T besar <0.5 apa ya? cek catetan dulu
     current_state = copy.deepcopy(initial_state)
-    current_score = main.objective_function(current_state, ship)
+    current_score = utils.objective_function(current_state, ship)
     best_state = copy.deepcopy(current_state)
     best_score = current_score
     temperature = init_temp
 
-    main.display(current_state, ship) #buat crosscheck
+    utils.display(current_state, ship) #buat crosscheck
 
     for i in range(max_iter):
         neighbor_state = get_neighbor(current_state, ship)
-        neighbor_score = main.objective_function(neighbor_state, ship)
+        neighbor_score = utils.objective_function(neighbor_state, ship)
 
         #rumus euler delta T/t
         delta = neighbor_score - current_score
@@ -52,6 +51,6 @@ def simulated_annealing(initial_state, ship, max_iter=100, init_temp=100, coolin
             best_score = current_score
 
         temperature = temperature * cooling_rate
-        main.display(current_state, ship) #buat cross check
+        utils.display(current_state, ship) #buat cross check
 
     return best_state, best_score

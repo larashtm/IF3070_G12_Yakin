@@ -11,7 +11,13 @@ def main():
     utils.display_map(state, ship)
 
     print("\nSWAP")
-    utils.swap(state)
+    utils.swap(state, ship)
+    utils.display(state, ship)
+    print("MAP")
+    utils.display_map(state, ship)
+
+    print("\nMOVE")
+    utils.move(state, ship)
     utils.display(state, ship)
     print("MAP")
     utils.display_map(state, ship)
