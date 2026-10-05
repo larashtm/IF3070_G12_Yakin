@@ -26,4 +26,14 @@ def main():
     print("MAP")
     utils.display_map(state, ship)
 
+    #tester simulated annealing
+    print("\nSIMULATED ANNEALING")
+    best_state, best_score = simulated_annealing(state, ship, max_iter=100, init_temp=100, cooling_rate=0.99)
+    print("\nBEST STATE")
+    utils.display(best_state, ship)
+    print("BEST SCORE")
+    print(best_score)
+    print("MAP")
+    utils.display_map(best_state, ship)
+
 main()
