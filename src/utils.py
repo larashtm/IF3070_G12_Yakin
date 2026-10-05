@@ -45,16 +45,21 @@ def init_state(vehicles: list[Vehicle], ship: Ship) -> list[Vehicle]:
     for v in state:
         v.is_loaded = random.random() < 0.5 #dirandomin dulu
 
-        if not v.is_loaded:
-            v.x = random.randint(-ship.dimension.width, ship.dimension.width)
-            v.y = random.randint(-ship.dimension.length, ship.dimension.length)
-            continue
+        if v.is_loaded:
+            for _ in range(100): #batasi percobaan biar ga infinite loop
+                v.x = random.randint(0, ship.dimension.width - v.dimension.width)
+                v.y = random.randint(0, ship.dimension.length - v.dimension.length)
+                if not_overlapping(state, ship) and not exceed_capacity_limit(state, ship):
+                    break #ulang lagi, ga boleh vehicles tumpuk nanti menyalahi constraints
 
-        while True:
-            v.x = random.randint(0, ship.dimension.width - v.dimension.width)
-            v.y = random.randint(0, ship.dimension.length - v.dimension.length)
-            if not_overlapping(state, ship):
-                break #ulang lagi, ga boleh vehicles tumpuk nanti menyalahi constraints
+        if not v.is_loaded:
+            v.is_loaded = True #sementara, biar exceed_ship_limit mau ngecek
+            while True:
+                v.x = random.randint(-ship.dimension.width, ship.dimension.width)
+                v.y = random.randint(-ship.dimension.length, ship.dimension.length)
+                if exceed_ship_limit([v], ship): #pastikan ga utuh di dalam kapal
+                    break
+            v.is_loaded = False
 
     return state
 
@@ -130,20 +135,46 @@ def objective_function(vehicles: list[Vehicle], ship: Ship) -> int:
     return total_uang
 
 
-def swap(vehicles: list[Vehicle]):
+def swap(vehicles: list[Vehicle], ship: Ship):
     vehicle_a, vehicle_b = random.sample(vehicles, 2)
+    old_a = (vehicle_a.x, vehicle_a.y, vehicle_a.is_loaded)
+    old_b = (vehicle_b.x, vehicle_b.y, vehicle_b.is_loaded)
+
     vehicle_a.x, vehicle_b.x = vehicle_b.x, vehicle_a.x
     vehicle_a.y, vehicle_b.y = vehicle_b.y, vehicle_a.y
+
+    #status loaded ditentuin ulang dari posisi baru
+    for v in (vehicle_a, vehicle_b):
+        v.is_loaded = True
+        if exceed_ship_limit([v], ship):
+            v.is_loaded = False
+
+    #kalau jadi tumpuk atau lewat batas berat, abort
+    if not not_overlapping(vehicles, ship) or exceed_capacity_limit(vehicles, ship):
+        vehicle_a.x, vehicle_a.y, vehicle_a.is_loaded = old_a
+        vehicle_b.x, vehicle_b.y, vehicle_b.is_loaded = old_b
 
 
 def move(vehicles: list[Vehicle], ship: Ship):
     vehicle = random.choice(vehicles)
-    vehicle.x = random.randint(0, ship.dimension.width - vehicle.dimension.width)
-    vehicle.y = random.randint(0, ship.dimension.length - vehicle.dimension.length)
+    old = (vehicle.x, vehicle.y, vehicle.is_loaded)
+
+    vehicle.x = random.randint(-ship.dimension.width, ship.dimension.width)
+    vehicle.y = random.randint(-ship.dimension.length, ship.dimension.length)
+
+    vehicle.is_loaded = True
+    if exceed_ship_limit([vehicle], ship):
+        vehicle.is_loaded = False
+
+    if not not_overlapping(vehicles, ship) or exceed_capacity_limit(vehicles, ship):
+        vehicle.x, vehicle.y, vehicle.is_loaded = old #abort
 
 
-def rotate(vehicles: list[Vehicle]):
+def rotate(vehicles: list[Vehicle], ship: Ship):
     vehicle = random.choice(vehicles)
+    old_orientation = vehicle.orientation
+    old_width, old_length = vehicle.dimension.width, vehicle.dimension.length
+    old_loaded = vehicle.is_loaded
 
     if vehicle.orientation == "Horizontal":
         vehicle.orientation = "Vertical"
@@ -152,13 +183,19 @@ def rotate(vehicles: list[Vehicle]):
 
     vehicle.dimension.width, vehicle.dimension.length = vehicle.dimension.length, vehicle.dimension.width
 
+    vehicle.is_loaded = True
+    if exceed_ship_limit([vehicle], ship):
+        vehicle.is_loaded = False
+
+    if not not_overlapping(vehicles, ship) or exceed_capacity_limit(vehicles, ship):
+        vehicle.orientation = old_orientation
+        vehicle.dimension.width, vehicle.dimension.length = old_width, old_length
+        vehicle.is_loaded = old_loaded
+
 
 #display ship
 def display(vehicles: list[Vehicle], ship: Ship):
     map = [["." for i in range(ship.dimension.width)] for i in range(ship.dimension.length)]
-    
-    if exceed_ship_limit(vehicles, ship):
-        return
 
     for v in vehicles:
         if v.is_loaded:
