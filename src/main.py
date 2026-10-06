@@ -1,7 +1,4 @@
-import utils, json
-from hill_climbing import *
-from simulated_annealing import *
-from genetic_algorithm import *
+import utils, json, hill_climbing, simulated_annealing, genetic_algorithm
 
 
 def main():
@@ -28,7 +25,7 @@ def main():
 
     #tester simulated annealing
     print("\nSIMULATED ANNEALING")
-    best_state, best_score = simulated_annealing(state, ship, max_iter=100, init_temp=100, cooling_rate=0.99)
+    best_state, best_score = simulated_annealing.simulated_annealing(state, ship, max_iter=100, init_temp=100, cooling_rate=0.99)
     print("\nBEST STATE")
     utils.display(best_state, ship)
     print("BEST SCORE")
