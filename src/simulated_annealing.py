@@ -27,7 +27,7 @@ def simulated_annealing(initial_state, ship, max_iter=100, init_temp=100, coolin
     best_score = current_score
     temperature = init_temp
 
-    utils.display(current_state, ship) #buat crosscheck
+    #utils.display(current_state, ship) #buat crosscheck
 
     for i in range(max_iter):
         neighbor_state = get_neighbor(current_state, ship)
@@ -51,6 +51,6 @@ def simulated_annealing(initial_state, ship, max_iter=100, init_temp=100, coolin
             best_score = current_score
 
         temperature = temperature * cooling_rate
-        utils.display(current_state, ship) #buat cross check
+        #utils.display(current_state, ship) #buat cross check
 
     return best_state, best_score
