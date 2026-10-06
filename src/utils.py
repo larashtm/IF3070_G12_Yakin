@@ -94,7 +94,7 @@ def not_overlapping(vehicles: list[Vehicle], ship: Ship) -> bool:
             aman_x = (a_right <= vehicle_b.x) or (vehicle_a.x >= b_right)
             aman_y = (a_below <= vehicle_b.y) or (vehicle_a.y >= b_below)
 
-            if not (aman_x and aman_y): 
+            if not (aman_x or aman_y): 
                 return False 
                
     return True
