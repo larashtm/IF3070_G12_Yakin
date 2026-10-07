@@ -503,16 +503,26 @@ def bikin_kendaraan_awal():
 # jalanin eksperimen lengkap 4 varian hill climbing dengan 3 kali percobaan (Run 1, Run 2, Run 3)
 def run_experiment(show_plot=True):
     kapal = Ship(10, 10, 1000)
-    kendaraan_awal = bikin_kendaraan_awal()
-    skor_awal = objective_function(kendaraan_awal, kapal)
+    kendaraan_template = bikin_kendaraan_awal()
 
-    # 1. simpan gambar denah geladak state awal
-    fig_awal, ax_awal = plt.subplots(figsize=(6, 6))
-    plot_deck(kendaraan_awal, kapal, f"Initial State (objective = {skor_awal})", ax_awal)
+    # label percobaan
+    percobaan_list = ["Run 1", "Run 2", "Run 3"]
+
+    # bangkitkan initial state acak murni untuk setiap run (Run 1, 2, 3)
+    # setiap run memiliki initial state acak bervariasi sesuai konfirmasi asisten
+    initial_states_per_run = {}
+    for run_label in percobaan_list:
+        initial_states_per_run[run_label] = bikin_state_acak(kendaraan_template, kapal)
+
+    # 1. simpan gambar perbandingan denah geladak state awal ketiga run
+    fig_awal, axes_awal = plt.subplots(1, 3, figsize=(14, 5))
+    for idx, run_label in enumerate(percobaan_list):
+        st = initial_states_per_run[run_label]
+        sc = objective_function(st, kapal)
+        plot_deck(st, kapal, f"Initial State - {run_label}\nObjective = {sc}", axes_awal[idx])
     simpan_gambar(fig_awal, "initial_state.png")
-
-    # konfigurasi 3 kali percobaan untuk setiap algoritma
-    percobaan_seeds = [("Run 1", 42), ("Run 2", 123), ("Run 3", 999)]
+    if not show_plot:
+        plt.close(fig_awal)
 
     # struktur data untuk merekam seluruh hasil eksperimen (12 baris)
     daftar_hasil = []
@@ -528,16 +538,16 @@ def run_experiment(show_plot=True):
     print("\n--- Menjalankan Eksperimen 4 Varian Hill Climbing (3 Run Tiap Varian) ---")
 
     # 1. Steepest Ascent Hill Climbing (Run 1, 2, 3)
-    for run_label, seed_val in percobaan_seeds:
-        random.seed(seed_val)
+    for run_label in percobaan_list:
+        init_st = copy.deepcopy(initial_states_per_run[run_label])
         t0 = time.process_time()
-        res = steepest_ascent_hill_climbing(kendaraan_awal, kapal, max_iterations=3000, num_candidates=None, verbose=False)
+        res = steepest_ascent_hill_climbing(init_st, kapal, max_iterations=3000, num_candidates=None, verbose=False)
         durasi = time.process_time() - t0
 
         item = {
             "algoritma": "Steepest Ascent",
             "run": run_label,
-            "initial_state": copy.deepcopy(kendaraan_awal),
+            "initial_state": copy.deepcopy(init_st),
             "initial_of": res[3][0],
             "final_of": res[1],
             "iterasi_info": f"{res[2]} iterasi",
@@ -550,16 +560,16 @@ def run_experiment(show_plot=True):
         data_algoritma["Steepest Ascent"].append(item)
 
     # 2. Stochastic Hill Climbing (Run 1, 2, 3)
-    for run_label, seed_val in percobaan_seeds:
-        random.seed(seed_val)
+    for run_label in percobaan_list:
+        init_st = copy.deepcopy(initial_states_per_run[run_label])
         t0 = time.process_time()
-        res = stochastic_hill_climbing(kendaraan_awal, kapal, max_iterations=3000, num_candidates=10, verbose=False)
+        res = stochastic_hill_climbing(init_st, kapal, max_iterations=3000, num_candidates=10, verbose=False)
         durasi = time.process_time() - t0
 
         item = {
             "algoritma": "Stochastic",
             "run": run_label,
-            "initial_state": copy.deepcopy(kendaraan_awal),
+            "initial_state": copy.deepcopy(init_st),
             "initial_of": res[3][0],
             "final_of": res[1],
             "iterasi_info": f"{res[2]} iterasi",
@@ -572,16 +582,16 @@ def run_experiment(show_plot=True):
         data_algoritma["Stochastic"].append(item)
 
     # 3. Sideways Move Hill Climbing (Run 1, 2, 3)
-    for run_label, seed_val in percobaan_seeds:
-        random.seed(seed_val)
+    for run_label in percobaan_list:
+        init_st = copy.deepcopy(initial_states_per_run[run_label])
         t0 = time.process_time()
-        res = sideways_move_hill_climbing(kendaraan_awal, kapal, max_iterations=3000, max_sideways_move=100, num_candidates=10, verbose=False)
+        res = sideways_move_hill_climbing(init_st, kapal, max_iterations=3000, max_sideways_move=100, num_candidates=10, verbose=False)
         durasi = time.process_time() - t0
 
         item = {
             "algoritma": "Sideways Move",
             "run": run_label,
-            "initial_state": copy.deepcopy(kendaraan_awal),
+            "initial_state": copy.deepcopy(init_st),
             "initial_of": res[3][0],
             "final_of": res[1],
             "iterasi_info": f"{res[2]} iterasi ({res.sideways_moves} sideways)",
@@ -594,17 +604,17 @@ def run_experiment(show_plot=True):
         data_algoritma["Sideways Move"].append(item)
 
     # 4. Random Restart Hill Climbing (Run 1, 2, 3)
-    for run_label, seed_val in percobaan_seeds:
-        random.seed(seed_val)
+    for run_label in percobaan_list:
+        init_st = copy.deepcopy(initial_states_per_run[run_label])
         t0 = time.process_time()
-        res = random_restart_hill_climbing(kapal, max_restart=10, max_iterations_per_restart=1000, initial_vehicles=kendaraan_awal, num_candidates=10, verbose=False)
+        res = random_restart_hill_climbing(kapal, max_restart=10, max_iterations_per_restart=1000, initial_vehicles=init_st, num_candidates=10, verbose=False)
         durasi = time.process_time() - t0
 
         item = {
             "algoritma": "Random Restart",
             "run": run_label,
-            "initial_state": res.initial_state if hasattr(res, "initial_state") and res.initial_state is not None else copy.deepcopy(kendaraan_awal),
-            "initial_of": res.initial_score if res.initial_score is not None else skor_awal,
+            "initial_state": res.initial_state if hasattr(res, "initial_state") and res.initial_state is not None else copy.deepcopy(init_st),
+            "initial_of": res.initial_score if res.initial_score is not None else objective_function(init_st, kapal),
             "final_of": res[1],
             "iterasi_info": f"{sum(res[3])} iterasi ({res[2]} restarts)",
             "durasi": durasi,
