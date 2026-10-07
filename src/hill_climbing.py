@@ -35,10 +35,10 @@ class SearchResult(tuple):
 
 # class hasil random restart agar kompatibel dengan unpacking 4 tuple (best_v, best_s, total_r, iters_per_r)
 class RandomRestartResult(tuple):
-    def __new__(cls, best_vehicles, best_score, total_restarts, iterations_per_restart, history_score=None, initial_score=None, status="Max Restart Reached"):
+    def __new__(cls, best_vehicles, best_score, total_restarts, iterations_per_restart, history_score=None, initial_score=None, status="Max Restart Reached", initial_state=None):
         return super().__new__(cls, (best_vehicles, best_score, total_restarts, iterations_per_restart))
 
-    def __init__(self, best_vehicles, best_score, total_restarts, iterations_per_restart, history_score=None, initial_score=None, status="Max Restart Reached"):
+    def __init__(self, best_vehicles, best_score, total_restarts, iterations_per_restart, history_score=None, initial_score=None, status="Max Restart Reached", initial_state=None):
         self.best_vehicles = best_vehicles
         self.best_score = best_score
         self.total_restarts = total_restarts
@@ -46,6 +46,7 @@ class RandomRestartResult(tuple):
         self.history_score = history_score if history_score is not None else [best_score]
         self.initial_score = initial_score
         self.status = status
+        self.initial_state = initial_state
 
 
 # bikin 1 tetangga acak dari state sekarang
@@ -348,9 +349,13 @@ def random_restart_hill_climbing(ship, max_restart=10, max_restarts=None, max_it
     cumulative_history = []
     initial_score = None
 
+    first_initial_state = None
+
     for restart_idx in range(1, limit_restarts + 1):
         # bangkitkan state awal acak baru di tiap restart
         start_state = bikin_state_acak(initial_vehicles, ship)
+        if first_initial_state is None:
+            first_initial_state = copy.deepcopy(start_state)
 
         # jalankan stochastic hill climbing untuk restart kali ini
         best_v, best_s, iters, hist = stochastic_hill_climbing(
@@ -378,7 +383,7 @@ def random_restart_hill_climbing(ship, max_restart=10, max_restarts=None, max_it
     total_restarts = len(iterations_per_restart)
     status = "Max Restart Reached"
     return RandomRestartResult(
-        global_best_vehicles, global_best_score, total_restarts, iterations_per_restart, cumulative_history, initial_score, status=status
+        global_best_vehicles, global_best_score, total_restarts, iterations_per_restart, cumulative_history, initial_score, status=status, initial_state=first_initial_state
     )
 
 
@@ -532,6 +537,7 @@ def run_experiment(show_plot=True):
         item = {
             "algoritma": "Steepest Ascent",
             "run": run_label,
+            "initial_state": copy.deepcopy(kendaraan_awal),
             "initial_of": res[3][0],
             "final_of": res[1],
             "iterasi_info": f"{res[2]} iterasi",
@@ -553,6 +559,7 @@ def run_experiment(show_plot=True):
         item = {
             "algoritma": "Stochastic",
             "run": run_label,
+            "initial_state": copy.deepcopy(kendaraan_awal),
             "initial_of": res[3][0],
             "final_of": res[1],
             "iterasi_info": f"{res[2]} iterasi",
@@ -574,6 +581,7 @@ def run_experiment(show_plot=True):
         item = {
             "algoritma": "Sideways Move",
             "run": run_label,
+            "initial_state": copy.deepcopy(kendaraan_awal),
             "initial_of": res[3][0],
             "final_of": res[1],
             "iterasi_info": f"{res[2]} iterasi ({res.sideways_moves} sideways)",
@@ -595,6 +603,7 @@ def run_experiment(show_plot=True):
         item = {
             "algoritma": "Random Restart",
             "run": run_label,
+            "initial_state": res.initial_state if hasattr(res, "initial_state") and res.initial_state is not None else copy.deepcopy(kendaraan_awal),
             "initial_of": res.initial_score if res.initial_score is not None else skor_awal,
             "final_of": res[1],
             "iterasi_info": f"{sum(res[3])} iterasi ({res[2]} restarts)",
@@ -606,7 +615,100 @@ def run_experiment(show_plot=True):
         daftar_hasil.append(item)
         data_algoritma["Random Restart"].append(item)
 
-    # VISUALISASI 1: Grid Geladak (2D) Final State (4 algoritma x 3 run = 12 subplots)
+    # VISUALISASI PER VARIAN ALGORITMA (DOKUMENTASI BAB 3)
+    # Untuk setiap algoritma dan setiap percobaan (Run 1, 2, 3), buat gambar komprehensif 3-kolom:
+    # [State Awal Geladak] | [State Akhir Geladak] | [Plot Objective Function vs Iterasi]
+    # Serta simpan gambar tabel ringkasan khusus untuk algoritma tersebut.
+    for algo_key, prefix in [
+        ("Steepest Ascent", "steepest_ascent"),
+        ("Stochastic", "stochastic"),
+        ("Sideways Move", "sideways_move"),
+        ("Random Restart", "random_restart"),
+    ]:
+        runs = data_algoritma[algo_key]
+
+        # 1. Plot individual per percobaan (Run 1, Run 2, Run 3)
+        for idx, item in enumerate(runs, 1):
+            fig_run, (ax_init, ax_final, ax_conv) = plt.subplots(1, 3, figsize=(16, 5))
+
+            # Kolom 1: State Awal
+            plot_deck(
+                item["initial_state"],
+                kapal,
+                f"State Awal ({item['run']})\nInitial OF: {item['initial_of']}",
+                ax_init,
+            )
+
+            # Kolom 2: State Akhir
+            plot_deck(
+                item["final_state"],
+                kapal,
+                f"State Akhir ({item['run']})\nFinal OF: {item['final_of']} | {item['status']}",
+                ax_final,
+            )
+
+            # Kolom 3: Plot Konvergensi Objective Function vs Iterasi
+            hist = item["history"]
+            ax_conv.plot(
+                range(len(hist)),
+                hist,
+                color="#1f77b4" if idx == 1 else ("#ff7f0e" if idx == 2 else "#2ca02c"),
+                marker="o",
+                markersize=4,
+                linewidth=2,
+                label=f"OF ({item['iterasi_info']})",
+            )
+            ax_conv.set_title(f"Konvergensi OF vs Iterasi ({item['run']})", fontsize=10, fontweight="bold")
+            ax_conv.set_xlabel("Iterasi", fontsize=9)
+            ax_conv.set_ylabel("Nilai Objective Function", fontsize=9)
+            ax_conv.grid(True, linestyle="--", alpha=0.5)
+            ax_conv.legend(fontsize=9, loc="lower right")
+
+            fig_run.suptitle(f"{algo_key} - Percobaan {idx} ({item['run']})", fontsize=13, fontweight="bold")
+            simpan_gambar(fig_run, f"{prefix}_run{idx}.png")
+            plt.close(fig_run)
+
+        # 2. Tabel ringkasan khusus untuk algoritma ini (buat disisipkan di laporan sebelum bahasan percobaan)
+        fig_algo_tab, ax_algo_tab = plt.subplots(figsize=(12, 3.2))
+        ax_algo_tab.axis("off")
+        ax_algo_tab.set_title(f"Tabel Percobaan {algo_key} (IF3070)", fontsize=12, fontweight="bold", pad=10)
+
+        algo_tab_rows = []
+        for r_item in runs:
+            algo_tab_rows.append([
+                r_item["run"],
+                str(r_item["initial_of"]),
+                str(r_item["final_of"]),
+                r_item["iterasi_info"],
+                f"{r_item['durasi']:.4f} s",
+                r_item["status"],
+            ])
+
+        algo_headers = ["Percobaan Ke-", "Initial OF", "Final OF", "Jumlah Iterasi / Info", "Durasi (detik)", "Status Berhenti"]
+        tab_inst = ax_algo_tab.table(
+            cellText=algo_tab_rows,
+            colLabels=algo_headers,
+            loc="center",
+            cellLoc="center",
+        )
+        tab_inst.auto_set_font_size(False)
+        tab_inst.set_fontsize(9.5)
+        tab_inst.scale(1.1, 1.8)
+
+        for c_i in range(len(algo_headers)):
+            cell = tab_inst[0, c_i]
+            cell.set_facecolor("#2B547E")
+            cell.set_text_props(weight="bold", color="white")
+
+        for r_i in range(1, len(algo_tab_rows) + 1):
+            bg = "#F5F8FA" if r_i % 2 == 0 else "#FFFFFF"
+            for c_i in range(len(algo_headers)):
+                tab_inst[r_i, c_i].set_facecolor(bg)
+
+        simpan_gambar(fig_algo_tab, f"tabel_{prefix}.png")
+        plt.close(fig_algo_tab)
+
+    # VISUALISASI GABUNGAN 1: Grid Geladak (2D) Final State (4 algoritma x 3 run = 12 subplots)
     fig_final, axes_final = plt.subplots(4, 3, figsize=(14, 16))
     algo_names = ["Steepest Ascent", "Stochastic", "Sideways Move", "Random Restart"]
     for row_idx, algo_name in enumerate(algo_names):
@@ -620,8 +722,10 @@ def run_experiment(show_plot=True):
                 ax,
             )
     simpan_gambar(fig_final, "final_state.png")
+    if not show_plot:
+        plt.close(fig_final)
 
-    # VISUALISASI 2: Grafik Konvergensi Objective Function vs Iterasi (2x2 subplots untuk ke-4 varian)
+    # VISUALISASI GABUNGAN 2: Grafik Konvergensi Objective Function vs Iterasi (2x2 subplots untuk ke-4 varian)
     fig_conv, axes_conv = plt.subplots(2, 2, figsize=(13, 9))
     plot_coords = [(0, 0), (0, 1), (1, 0), (1, 1)]
     run_colors = ["#1f77b4", "#ff7f0e", "#2ca02c"]
@@ -648,8 +752,10 @@ def run_experiment(show_plot=True):
         ax.legend(fontsize=9, loc="lower right")
 
     simpan_gambar(fig_conv, "objective_vs_iterasi.png")
+    if not show_plot:
+        plt.close(fig_conv)
 
-    # VISUALISASI 3: Tabel Hasil Eksperimen sesuai format BAB 3 Dokumentasi
+    # VISUALISASI GABUNGAN 3: Tabel Hasil Eksperimen Lengkap sesuai format BAB 3 Dokumentasi
     fig_tab, ax_tab = plt.subplots(figsize=(14, 6.5))
     ax_tab.axis("off")
     ax_tab.set_title("Tabel Ringkasan Eksperimen 4 Varian Hill Climbing (IF3070)", fontsize=13, fontweight="bold", pad=14)
@@ -690,10 +796,24 @@ def run_experiment(show_plot=True):
             tabel[row_idx, col_idx].set_facecolor(bg)
 
     simpan_gambar(fig_tab, "hasil_eksperimen.png")
+    if not show_plot:
+        plt.close(fig_tab)
 
-    # CETAK TABEL REKAPITULASI DOKUMENTASI BAB 3 DI TERMINAL
+    # CETAK TABEL REKAPITULASI DOKUMENTASI BAB 3 DI TERMINAL PER ALGORITMA
+    for algo_title in ["Steepest Ascent", "Stochastic", "Sideways Move", "Random Restart"]:
+        print("\n" + "=" * 90)
+        print(f"Informasi Eksperimen: {algo_title}")
+        print("=" * 90)
+        print(f"| {'Percobaan Ke-':<13} | {'Initial OF':<10} | {'Final OF':<8} | {'Jumlah Iterasi / Info':<28} | {'Durasi (detik)':<14} |")
+        print(f"| {':---:':<13} | {':---:':<10} | {':---:':<8} | {':---':<28} | {':---':<14} |")
+        for item in data_algoritma[algo_title]:
+            dur_str = f"{item['durasi']:.4f} s"
+            print(f"| {item['run']:^13} | {item['initial_of']:^10} | {item['final_of']:^8} | {item['iterasi_info']:<28} | {dur_str:<14} |")
+        print("-" * 90)
+
+    # CETAK TABEL REKAP KESELURUHAN
     print("\n" + "=" * 105)
-    print(f"{'TABEL RINGKASAN PERCOBAAN (DOKUMENTASI BAB 3)':^105}")
+    print(f"{'TABEL RINGKASAN SELURUH PERCOBAAN (DOKUMENTASI BAB 3)':^105}")
     print("=" * 105)
     print(f"| {'Algoritma':<17} | {'Percobaan Ke-':<13} | {'Initial OF':<10} | {'Final OF':<8} | {'Total Iterasi / Restart':<30} | {'Durasi (detik)':<14} | {'Status Berhenti':<20} |")
     print(f"| {':---':<17} | {':---:':<13} | {':---:':<10} | {':---:':<8} | {':---':<30} | {':---':<14} | {':---':<20} |")
@@ -748,8 +868,16 @@ def verify_all_hill_climbing():
     assert rr_s >= 0, "Harus melacak global best score"
     print(f"- Random Restart: PASSED (Restarts: {restarts_target}, Skor: {rr_s})")
 
-    # 5. verifikasi ketersediaan file output visualisasi
-    required_files = ["final_state.png", "hasil_eksperimen.png", "objective_vs_iterasi.png"]
+    # 5. verifikasi ketersediaan file output visualisasi utama
+    required_files = [
+        "final_state.png",
+        "hasil_eksperimen.png",
+        "objective_vs_iterasi.png",
+        "steepest_ascent_run1.png",
+        "stochastic_run1.png",
+        "sideways_move_run1.png",
+        "random_restart_run1.png",
+    ]
     for fname in required_files:
         fpath = os.path.join(OUTPUT_DIR, fname)
         assert os.path.exists(fpath), f"File {fname} tidak ditemukan di {OUTPUT_DIR}"
