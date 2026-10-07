@@ -681,7 +681,8 @@ def run_experiment(show_plot=True):
         # 2. Tabel ringkasan khusus untuk algoritma ini (buat disisipkan di laporan sebelum bahasan percobaan)
         fig_algo_tab, ax_algo_tab = plt.subplots(figsize=(12, 3.2))
         ax_algo_tab.axis("off")
-        ax_algo_tab.set_title(f"Tabel Percobaan {algo_key} (IF3070)", fontsize=12, fontweight="bold", pad=10)
+        judul_tabel = f"Tabel Percobaan {algo_key}"
+        ax_algo_tab.set_title(judul_tabel, fontsize=12, fontweight="bold", pad=10)
 
         algo_tab_rows = []
         for r_item in runs:
@@ -689,12 +690,12 @@ def run_experiment(show_plot=True):
                 r_item["run"],
                 str(r_item["initial_of"]),
                 str(r_item["final_of"]),
-                r_item["iterasi_info"],
                 f"{r_item['durasi']:.4f} s",
+                r_item["iterasi_info"],
                 r_item["status"],
             ])
 
-        algo_headers = ["Percobaan Ke-", "Initial OF", "Final OF", "Jumlah Iterasi / Info", "Durasi (detik)", "Status Berhenti"]
+        algo_headers = ["Percobaan Ke-", "Initial OF", "Final OF", "Durasi (detik)", "Jumlah Iterasi / Info", "Status Berhenti"]
         tab_inst = ax_algo_tab.table(
             cellText=algo_tab_rows,
             colLabels=algo_headers,
@@ -768,7 +769,7 @@ def run_experiment(show_plot=True):
     # VISUALISASI GABUNGAN 3: Tabel Hasil Eksperimen Lengkap sesuai format BAB 3 Dokumentasi
     fig_tab, ax_tab = plt.subplots(figsize=(14, 6.5))
     ax_tab.axis("off")
-    ax_tab.set_title("Tabel Ringkasan Eksperimen 4 Varian Hill Climbing (IF3070)", fontsize=13, fontweight="bold", pad=14)
+    ax_tab.set_title("Tabel Ringkasan Eksperimen 4 Varian Hill Climbing", fontsize=13, fontweight="bold", pad=14)
 
     tabel_data = []
     for item in daftar_hasil:
@@ -777,12 +778,12 @@ def run_experiment(show_plot=True):
             item["run"],
             str(item["initial_of"]),
             str(item["final_of"]),
-            item["iterasi_info"],
             f"{item['durasi']:.4f} s",
+            item["iterasi_info"],
             item["status"],
         ])
 
-    col_headers = ["Algoritma", "Percobaan Ke-", "Initial OF", "Final OF", "Total Iterasi / Restart", "Durasi (detik)", "Status Berhenti"]
+    col_headers = ["Algoritma", "Percobaan Ke-", "Initial OF", "Final OF", "Durasi (detik)", "Jumlah Iterasi / Info", "Status Berhenti"]
     tabel = ax_tab.table(
         cellText=tabel_data,
         colLabels=col_headers,
@@ -812,24 +813,24 @@ def run_experiment(show_plot=True):
     # CETAK TABEL REKAPITULASI DOKUMENTASI BAB 3 DI TERMINAL PER ALGORITMA
     for algo_title in ["Steepest Ascent", "Stochastic", "Sideways Move", "Random Restart"]:
         print("\n" + "=" * 90)
-        print(f"Informasi Eksperimen: {algo_title}")
+        print(f"Tabel Percobaan: {algo_title}")
         print("=" * 90)
-        print(f"| {'Percobaan Ke-':<13} | {'Initial OF':<10} | {'Final OF':<8} | {'Jumlah Iterasi / Info':<28} | {'Durasi (detik)':<14} |")
-        print(f"| {':---:':<13} | {':---:':<10} | {':---:':<8} | {':---':<28} | {':---':<14} |")
+        print(f"| {'Percobaan Ke-':<13} | {'Initial OF':<10} | {'Final OF':<8} | {'Durasi (detik)':<14} | {'Jumlah Iterasi / Info':<28} |")
+        print(f"| {':---:':<13} | {':---:':<10} | {':---:':<8} | {':---':<14} | {':---':<28} |")
         for item in data_algoritma[algo_title]:
             dur_str = f"{item['durasi']:.4f} s"
-            print(f"| {item['run']:^13} | {item['initial_of']:^10} | {item['final_of']:^8} | {item['iterasi_info']:<28} | {dur_str:<14} |")
+            print(f"| {item['run']:^13} | {item['initial_of']:^10} | {item['final_of']:^8} | {dur_str:<14} | {item['iterasi_info']:<28} |")
         print("-" * 90)
 
     # CETAK TABEL REKAP KESELURUHAN
     print("\n" + "=" * 105)
-    print(f"{'TABEL RINGKASAN SELURUH PERCOBAAN (DOKUMENTASI BAB 3)':^105}")
+    print(f"{'TABEL RINGKASAN SELURUH PERCOBAAN HILL CLIMBING':^105}")
     print("=" * 105)
-    print(f"| {'Algoritma':<17} | {'Percobaan Ke-':<13} | {'Initial OF':<10} | {'Final OF':<8} | {'Total Iterasi / Restart':<30} | {'Durasi (detik)':<14} | {'Status Berhenti':<20} |")
-    print(f"| {':---':<17} | {':---:':<13} | {':---:':<10} | {':---:':<8} | {':---':<30} | {':---':<14} | {':---':<20} |")
+    print(f"| {'Algoritma':<17} | {'Percobaan Ke-':<13} | {'Initial OF':<10} | {'Final OF':<8} | {'Durasi (detik)':<14} | {'Jumlah Iterasi / Info':<28} | {'Status Berhenti':<20} |")
+    print(f"| {':---':<17} | {':---:':<13} | {':---:':<10} | {':---:':<8} | {':---':<14} | {':---':<28} | {':---':<20} |")
     for item in daftar_hasil:
         dur_str = f"{item['durasi']:.4f} s"
-        print(f"| {item['algoritma']:<17} | {item['run']:^13} | {item['initial_of']:^10} | {item['final_of']:^8} | {item['iterasi_info']:<30} | {dur_str:<14} | {item['status']:<20} |")
+        print(f"| {item['algoritma']:<17} | {item['run']:^13} | {item['initial_of']:^10} | {item['final_of']:^8} | {dur_str:<14} | {item['iterasi_info']:<28} | {item['status']:<20} |")
     print("=" * 105 + "\n")
 
     if show_plot:
