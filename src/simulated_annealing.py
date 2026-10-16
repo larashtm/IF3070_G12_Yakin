@@ -1,4 +1,4 @@
-import utils, random, copy, math
+import utils, random, copy, math, time
 
 #inisialisasi state, random
 #rumus, temp, 0.5
@@ -18,14 +18,19 @@ def get_neighbor(vehicles, ship):
         utils.rotate(neighbor, ship)
     return neighbor
 
-def simulated_annealing(initial_state, ship, max_iter=100, init_temp=100, cooling_rate=0.99):
+def simulated_annealing(initial_state, ship, max_iter=100, init_temp=100, cooling_rate=0.99, stuck_threshold=10):
     #initialize
+    start_time = time.perf_counter()
     #yang T besar <0.5 apa ya? cek catetan dulu
     current_state = copy.deepcopy(initial_state)
     current_score = utils.objective_function(current_state, ship)
     best_state = copy.deepcopy(current_state)
     best_score = current_score
     temperature = init_temp
+
+    objective_function_value = [current_score]
+    stuck_count = 0
+    no_improvement = 0
 
     utils.display(current_state, ship) #buat crosscheck
 
@@ -50,7 +55,19 @@ def simulated_annealing(initial_state, ship, max_iter=100, init_temp=100, coolin
             best_state = copy.deepcopy(current_state)
             best_score = current_score
 
+        objective_function_value.append(best_score)
+
+        if best_score == objective_function_value[-2]:
+            no_improvement += 1
+        else:
+            no_improvement = 0
+
+        if no_improvement >= stuck_threshold:
+            stuck_count += 1
+            no_improvement = 0
+
         temperature = temperature * cooling_rate
         utils.display(current_state, ship) #buat cross check
+        duration = time.perf_counter() - start_time
 
-    return best_state, best_score
+    return best_state, best_score, objective_function_value, stuck_count, duration
