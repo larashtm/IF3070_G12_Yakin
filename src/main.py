@@ -1,36 +1,36 @@
-import utils, json, hill_climbing, simulated_annealing, genetic_algorithm
-
+import utils, json, main_simulated_annealing, simulated_annealing
+#import hill_climbing, genetic_algorithm  # aktifkan kalau file-nya sudah ada
+#import main_hill_climbing, main_genetic_algorithm
 
 def main():
-    vehicles, ship = utils.load_json("src/vehicles.json")
-    state = utils.init_state(vehicles, ship) #ini bisa di initialize disini atau di masing masing algoritma, sementara disini dulu buat testing
+    while True:
+        print("\nPilih algoritma yang ingin dijalankan:\n")
+        print("1. Steepest Ascent Hill Climbing")
+        print("2. Stochastic Hill Climbing")
+        print("3. Sideways Move Hill Climbing")
+        print("4. Random Restart Hill Climbing")
+        print("5. Simulated Annealing")
+        print("6. Genetic Algorithm")
+        print("0. Keluar")
+        pilihan = input("Masukkan pilihan (0-6): ").strip()
 
-    print("\nINITIAL STATE")
-    print("SHIP")
-    utils.display(state, ship)
-    print("MAP")
-    utils.display_map(state, ship)
+        if pilihan == "0":
+            break
+        elif pilihan == "1":
+            pass
+        elif pilihan == "2":
+            pass
+        elif pilihan == "3":
+            pass
+        elif pilihan == "4":
+            pass
+        elif pilihan == "5":
+            main_simulated_annealing.main_simulated_annealing()
+        elif pilihan == "6":
+            pass
+        else:
+            print("Pilihan tidak valid.")
 
-    print("\nSWAP")
-    utils.swap(state, ship)
-    utils.display(state, ship)
-    print("MAP")
-    utils.display_map(state, ship)
 
-    print("\nMOVE")
-    utils.move(state, ship)
-    utils.display(state, ship)
-    print("MAP")
-    utils.display_map(state, ship)
-
-    #tester simulated annealing
-    print("\nSIMULATED ANNEALING")
-    best_state, best_score = simulated_annealing.simulated_annealing(state, ship, max_iter=100, init_temp=100, cooling_rate=0.99)
-    print("\nBEST STATE")
-    utils.display(best_state, ship)
-    print("BEST SCORE")
-    print(best_score)
-    print("MAP")
-    utils.display_map(best_state, ship)
-
-main()
+if __name__ == "__main__":
+    main()
