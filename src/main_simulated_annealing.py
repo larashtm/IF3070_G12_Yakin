@@ -1,5 +1,6 @@
 import utils, simulated_annealing, matplotlib.pyplot as plt, copy
 
+#display sebelumnya disini, tapi sementara ga dipake dulu biar ga kebanyakan output
 
 def plot(y, ylabel, run, start=0):
     plt.figure(figsize=(10, 5))
@@ -12,19 +13,18 @@ def plot(y, ylabel, run, start=0):
 
 def main_simulated_annealing():
     vehicles, ship = utils.load_json("src/vehicles.json")
-    state = utils.init_state(vehicles, ship) #ini bisa di initialize disini atau di masing masing algoritma, sementara disini dulu buat testing
+    state = utils.init_state(vehicles, ship) #ini bisa di initialize disini atau di main yang real main.py, tapi sementara disini dulu buat testing
 
-    summary = []  # rekap 3 run
+    summary = []
 
-    for run in range(1, 4):  # soal minta 3 kali run
-        for _ in range(100):  # cari initial state valid (skor > 0)
+    for run in range(0, 3): #run 3x
+        for i in range(100):
+
             state = utils.init_state(vehicles, ship)
             if utils.objective_function(state, ship) > 0:
                 break
 
         initial_score = utils.objective_function(state, ship)
-
-        #tester simulated annealing
         best_state, best_score, objective_function_value, stuck_count, duration, acceptance_probabilities = simulated_annealing.simulated_annealing(
             copy.deepcopy(state), ship, max_iter=1000, init_temp=30, cooling_rate=0.99, stuck_threshold=10)
 
@@ -34,12 +34,12 @@ def main_simulated_annealing():
         plot(objective_function_value, "Objective Function", run)
         plot(acceptance_probabilities, "e^(deltaE / T)", run, start=1)
 
-    print("\nRINGKASAN 3 RUN")
+    print("\nHASIL 3X RUN")
     print(f"{'Run':<5}{'Initial':<10}{'Final':<10}{'Stuck':<8}{'Durasi (s)':<12}")
     for run, init_s, final_s, stuck, dur in summary:
         print(f"{run:<5}{init_s:<10}{final_s:<10}{stuck:<8}{dur:<12.4f}")
 
-    plt.show()
+    plt.show() #ini jadi keluar semua barengan, nanti revisi lagi mau gimana
 
 if __name__ == "__main__":
     main_simulated_annealing()

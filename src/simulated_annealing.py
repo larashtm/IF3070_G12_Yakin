@@ -72,6 +72,7 @@ def simulated_annealing(initial_state, ship, max_iter=1000, init_temp=30, coolin
         temperature = temperature * cooling_rate
         #utils.display(current_state, ship) #buat cross check
 
+
     duration = time.perf_counter() - start_time
 
     return best_state, best_score, objective_function_value, stuck_count, duration, acceptance_probabilities
