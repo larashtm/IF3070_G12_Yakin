@@ -27,7 +27,12 @@ def simulated_annealing(initial_state, ship, max_iter=1000, init_temp=30, coolin
     best_score = current_score
     temperature = init_temp
 
-    utils.display(current_state, ship) #buat crosscheck
+    objective_function_value = [current_score]
+    acceptance_probabilities = []
+    stuck_count = 0
+    no_improvement = 0
+
+    #utils.display(current_state, ship) #buat crosscheck
 
     for i in range(max_iter):
         neighbor_state = get_neighbor(current_state, ship)
@@ -65,7 +70,6 @@ def simulated_annealing(initial_state, ship, max_iter=1000, init_temp=30, coolin
             stuck_count += 1
 
         temperature = temperature * cooling_rate
-        utils.display(current_state, ship) #buat cross check
 
     duration = time.perf_counter() - start_time
 
