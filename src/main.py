@@ -1,5 +1,5 @@
 import utils, json, main_simulated_annealing, simulated_annealing
-#import hill_climbing, genetic_algorithm  # aktifkan kalau file-nya sudah ada
+#import hill_climbing, genetic_algorithm
 #import main_hill_climbing, main_genetic_algorithm
 
 def main():
