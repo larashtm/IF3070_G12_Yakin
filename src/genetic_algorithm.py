@@ -32,33 +32,76 @@ def genetic_algorithm(vehicles, ship, population_size = 30, max_iter = 100, muta
 
     #after that, kita membuat populasi awal, menghitung skor, lalu simpan susunan terbaik 
     start_time = time.perf_counter()
+
     population = []
-    for i in range (population_size): 
-        state = create_individual(vehicles, ship)
+
+    for i in range(population_size): 
+        state = create_individual(vehicles,ship)
         population.append(state)
 
-        initial_population = copy.deepcopy(population)
+    #di luar for: populasi harus selesai dibuat dahulu 
+    initial_population = copy.deepcopy(population)
+    
+    scores = []
 
-        #hitung skor tiap individu
+    for state in population: 
+        score = utils.objective_function(state, ship)
+        scores.append(score) #tambahkan angka ke list scores
+
+    best_index = scores.index(max(scores))
+
+    best_state = copy.deepcopy(population[best_index])
+    best_score = scores[best_index]
+
+    #catat skor maks dan rata-rata populasi awal 
+    max_history = [max(scores)]
+    mean_history = [sum(scores)/len(scores)]
+
+    #mulai pergantian generasi 
+    for iteration in range(max_iter): 
+        #simpan satu individiu paling terbaik ke generaksi berikutnya 
+        new_population = [copy.deepcopy(best_state)]
+
+        while len(new_population) < population_size: 
+            parent_a, parent_b = select_parents(population,scores)
+            child = crossover(parent_a, parent_b)
+            child = mutate(child,ship,mutation_rate)
+
+            new_population.append(child)
+        #populasi baru menggantikan populasi lama 
+        population = new_population
+
+        #hitung skor generasi baru 
         scores = []
-
         for state in population: 
-            score = utils.objective_function(state,ship)
+            score=utils.objective_function(state,ship)
             score.append(score)
+        best_index= scores.index(max(scores))
 
-        #cari indeks individy dengan skor tinggi 
-        best_index = scores.index(max(scores))
+        #perbarui catatan terbaik jika skor meningkat 
+        if scores[best_index]>best_score: 
+            best_state = copy.deepcopy(population[best_index])
+            best_score = scores[best_index]
 
-        #simpan individu terbaik beserta stoknya 
-        best_state = copy.deepcopy(population[best_index])
-        best_score = scores[best_index]
+            #simpanin statistik ini utk grafik 
+            max_history.append(max(scores))
+            mean_history.append(sum(scores)/len(scores))
 
-        #simpan statistik populasi awal untuk grafik 
-        max_history = [max(scores)]
-        mean_history = [sum(scores) / len(scores)]
+    #seluruh generasi selesai 
+    duration=time.perf_counter()-start_time
 
+    info = {
+        "initial_population": initial_population, 
+        "max_history": max_history, 
+        "mean_history": mean_history, 
+        "duration": duration, 
+        "population_size": population_size, 
+        "iterations": max_iter, 
+        "mutation_rate": mutation_rate, 
+        "seed": seed, 
+    }
 
-
+    return best_state, best_score, info
 
 def create_individual(vehicles,ship): 
     state = copy.deepcopy(vehicles) 
@@ -97,22 +140,22 @@ def repair_state(state, ship):
         vehicle.is_loaded = False
     
     random.shuffle(candidates)
-    total_weight = 0 
+    
 
     for vehicle in candidates: 
         max_x = ship.dimension.width-vehicle.dimension.width
-        max_y = ship.dimension.lenfth-vehicle.dimension.length
+        max_y = ship.dimension.length-vehicle.dimension.length
 
         #lewati kendaraan yang ukuran tidak muat
         if max_x < 0 or max_y < 0: 
-            continue
-        #lewati kendaraan jika kapasitas akan overloaded 
-        if total_weight + vehicle.weight > ship.maxCapacity: 
             continue
 
 
         #aktifin sementara agar ikut diperiksa oleh utils
         vehicle.is_loaded = True 
+        if utils.exceed_capacity_limit(state,ship):
+            vehicle.is_loaded = False 
+            continue 
         position_is_valid = (not utils.exceed_ship_limit(state,ship) and utils.not_overlapping(state,ship))
 
         #jika tidak valid, cari posisi lain
@@ -137,10 +180,8 @@ def repair_state(state, ship):
                 if position_is_valid: 
                     break
 
-        if position_is_valid: 
-            total_weight+=vehicle.weight
-        else: 
-            vehicle.is_loaded = False
+        if not position_is_valid: 
+            vehicle.is_loaded = False 
 
     return state
 
@@ -178,7 +219,24 @@ def crossover(parent_a, parent_b): #buat satu anak dari dua parent
 
 
 
-
     
 def mutate (state,ship,mutation_rate): 
-    pass
+    #perbaiki dahulu karena operasi utils mengandalkan state awal valid
+    repair_state(state,ship)
+
+    if len(state) == 0: 
+        return state 
+
+    #tentuin apakah anak ini menjalani mutasi 
+    if random.random() < mutation_rate: 
+        operations = [utils.move, utils.rotate]
+
+        #swap butuh minimal 2 kendaraan 
+        if len(state) >= 2: 
+            operations.append(utils.swap)
+
+        #pilih dan jalankan satu operasi 
+        operation = random.choice(operations)
+        operation(state,ship)
+
+    return state 
