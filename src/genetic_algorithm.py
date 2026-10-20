@@ -37,7 +37,7 @@ def genetic_algorithm(vehicles, ship, population_size = 30, max_iter = 100, muta
         state = create_individual(vehicles, ship)
         population.append(state)
 
-        initial_population - copy.deepcopy(population)
+        initial_population = copy.deepcopy(population)
 
         #hitung skor tiap individu
         scores = []
