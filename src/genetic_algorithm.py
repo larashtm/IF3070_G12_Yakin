@@ -57,6 +57,10 @@ def genetic_algorithm(vehicles, ship, population_size = 30, max_iter = 100, muta
     max_history = [max(scores)]
     mean_history = [sum(scores)/len(scores)]
 
+    #simpan individu paling baik dari populasi awal untuk gambar pembandingny
+    initial_state=copy.deepcopy(best_state)
+    initial_score=best_score
+
     #mulai pergantian generasi 
     for iteration in range(max_iter): 
         #simpan satu individiu paling terbaik ke generaksi berikutnya 
@@ -75,7 +79,7 @@ def genetic_algorithm(vehicles, ship, population_size = 30, max_iter = 100, muta
         scores = []
         for state in population: 
             score=utils.objective_function(state,ship)
-            score.append(score)
+            scores.append(score)
         best_index= scores.index(max(scores))
 
         #perbarui catatan terbaik jika skor meningkat 
@@ -83,15 +87,17 @@ def genetic_algorithm(vehicles, ship, population_size = 30, max_iter = 100, muta
             best_state = copy.deepcopy(population[best_index])
             best_score = scores[best_index]
 
-            #simpanin statistik ini utk grafik 
-            max_history.append(max(scores))
-            mean_history.append(sum(scores)/len(scores))
+        #catat tiap generasi, termasuk saat skornya tidak berubah
+        max_history.append(max(scores))
+        mean_history.append(sum(scores)/len(scores))
 
     #seluruh generasi selesai 
     duration=time.perf_counter()-start_time
 
     info = {
         "initial_population": initial_population, 
+        "initial_state": initial_state, 
+        "initial_score": initial_score, 
         "max_history": max_history, 
         "mean_history": mean_history, 
         "duration": duration, 
@@ -183,6 +189,7 @@ def repair_state(state, ship):
         if not position_is_valid: 
             vehicle.is_loaded = False 
 
+    park_unloaded(state,ship)
     return state
 
 
@@ -239,4 +246,17 @@ def mutate (state,ship,mutation_rate):
         operation = random.choice(operations)
         operation(state,ship)
 
+    park_unloaded(state,ship)
     return state 
+
+def park_unloaded(state,ship): 
+    #kendaran yang tidak muat ditaruh di kanan kapal 
+    outside_x = ship.dimension.width + 2 
+    next_y = 0 
+    for vehicle in state: 
+        if not vehicle.is_loaded: 
+            vehicle.x = outside_x 
+            vehicle.y = next_y
+
+            #beri jarak satu sel sebelum kendaraan berikutnya
+            next_y += vehicle.dimension.length + 1 

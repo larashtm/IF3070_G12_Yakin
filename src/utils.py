@@ -212,8 +212,8 @@ def display(vehicles: list[Vehicle], ship: Ship):
 def display_map(vehicles: list[Vehicle], ship: Ship):
     min_x = min([-ship.dimension.width] + [v.x for v in vehicles]) - 1 
     max_x = max([ship.dimension.width * 2] + [v.x + v.dimension.width for v in vehicles]) + 1 
-    min_y = min([-ship.dimension.width] + [v.y for v in vehicles]) - 1 
-    max_y = max([ship.dimension.width * 2] + [v.y + v.dimension.length for v in vehicles]) + 1 
+    min_y = min([-ship.dimension.length] + [v.y for v in vehicles]) - 1 
+    max_y = max([ship.dimension.length * 2] + [v.y + v.dimension.length for v in vehicles]) + 1 
 
     map = [["." for _ in range(min_x, max_x + 1)] for _ in range(min_y, max_y + 1)]
 
