@@ -1,7 +1,6 @@
-import utils, random, copy, math
+import utils, random, copy, math, time
 
 #inisialisasi state, random
-#rumus, temp, 0.5
 #catat:
 #plot eET terhadap banyak iterasi yang telah dilewati
 #Frekuensi ‘stuck’ di local optimal
@@ -18,8 +17,9 @@ def get_neighbor(vehicles, ship):
         utils.rotate(neighbor, ship)
     return neighbor
 
-def simulated_annealing(initial_state, ship, max_iter=100, init_temp=100, cooling_rate=0.99):
+def simulated_annealing(initial_state, ship, max_iter=1000, init_temp=30, cooling_rate=0.99, stuck_threshold=10):  #awalnya kan pake 100, tapi ganti 1000 biar keliatan pola pendinginan
     #initialize
+    start_time = time.perf_counter()
     #yang T besar <0.5 apa ya? cek catetan dulu
     current_state = copy.deepcopy(initial_state)
     current_score = utils.objective_function(current_state, ship)
@@ -27,7 +27,12 @@ def simulated_annealing(initial_state, ship, max_iter=100, init_temp=100, coolin
     best_score = current_score
     temperature = init_temp
 
-    utils.display(current_state, ship) #buat crosscheck
+    objective_function_value = [current_score]
+    acceptance_probabilities = []  #e^(deltaE/T) tiap iterasi, buat plotting
+    stuck_count = 0
+    no_improvement = 0
+
+    #utils.display(current_state, ship) #buat crosscheck
 
     for i in range(max_iter):
         neighbor_state = get_neighbor(current_state, ship)
@@ -39,10 +44,13 @@ def simulated_annealing(initial_state, ship, max_iter=100, init_temp=100, coolin
         if delta > 0:
             current_state = neighbor_state
             current_score = neighbor_score
+            acceptance_probabilities.append(1.0)
 
         else: #bikin yang probabilitas. cek catetan!!
             probability = random.random()
-            if probability < math.exp(delta / temperature):
+            acceptance_prob = math.exp(delta / temperature)
+            acceptance_probabilities.append(acceptance_prob)
+            if probability < acceptance_prob:
                 current_state = neighbor_state
                 current_score = neighbor_score
 
@@ -50,7 +58,21 @@ def simulated_annealing(initial_state, ship, max_iter=100, init_temp=100, coolin
             best_state = copy.deepcopy(current_state)
             best_score = current_score
 
-        temperature = temperature * cooling_rate
-        utils.display(current_state, ship) #buat cross check
+        objective_function_value.append(current_score)
 
-    return best_state, best_score
+        # kalo biasa best_score, tapi diganti jadi stuck dihitung dari current_score yang ga berubah selama threshold iterasi, dan ga dihitung berulang kalau skornya masih sama
+        if current_score == objective_function_value[-2]:
+            no_improvement += 1
+        else:
+            no_improvement = 0
+
+        if no_improvement == stuck_threshold:
+            stuck_count += 1
+
+        temperature = temperature * cooling_rate
+        #utils.display(current_state, ship) #buat cross check
+
+
+    duration = time.perf_counter() - start_time
+
+    return best_state, best_score, objective_function_value, stuck_count, duration, acceptance_probabilities

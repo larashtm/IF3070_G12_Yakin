@@ -1,93 +1,107 @@
-import os
-import sys
-import json
 import utils
-import hill_climbing
 import simulated_annealing
+import main_simulated_annealing
+import hill_climbing
 import genetic_algorithm
 
-# Re-ekspor objek & helper agar tetap backward-compatible bila diimpor dari main
-Vehicle = utils.Vehicle
-Ship = utils.Ship
-Dimension = utils.Dimension
-shipping_fee = utils.shipping_fee
-not_overlapping = utils.not_overlapping
-exceed_ship_limit = utils.exceed_ship_limit
-exceed_capacity_limit = utils.exceed_capacity_limit
-objective_function = utils.objective_function
-# Re-ekspor fungsi dengan wrapper toleran terhadap argumen ship opsional
-def swap(vehicles, ship=None):
-    if ship is not None:
-        return utils.swap(vehicles, ship)
-    # Jika dipanggil tanpa ship (format awal hill climbing), lakukan swap koordinat
-    loaded = [v for v in vehicles if v.is_loaded]
-    target_list = loaded if len(loaded) >= 2 else vehicles
-    if len(target_list) >= 2:
-        import random
-        va, vb = random.sample(target_list, 2)
-        va.x, vb.x = vb.x, va.x
-        va.y, vb.y = vb.y, va.y
 
+# ---------------------------------------------------------------------------
+# Adapter per-varian Hill Climbing
+# Memanggil masing-masing fungsi HC secara individual (3 run per varian)
+# menggunakan data dari vehicles.json via hill_climbing.bikin_kendaraan_awal()
+# ---------------------------------------------------------------------------
 
-def move(vehicles, ship):
-    return utils.move(vehicles, ship)
+def _run_hc_variant(variant_name):
+    """Adapter minimal: jalankan 1 varian HC (3 run) dan tampilkan hasilnya."""
+    import copy, time, os
+    from utils import load_json, objective_function
 
+    # Muat data kendaraan dan kapal
+    json_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "vehicles.json")
+    kendaraan_template = hill_climbing.bikin_kendaraan_awal(json_path)
+    _, kapal = load_json(json_path)
 
-def rotate(vehicles, ship=None):
-    if ship is not None:
-        return utils.rotate(vehicles, ship)
-    import random
-    v = random.choice(vehicles)
-    if v.orientation == "Horizontal":
-        v.orientation = "Vertical"
-    else:
-        v.orientation = "Horizontal"
-    v.dimension.width, v.dimension.length = v.dimension.length, v.dimension.width
-display = utils.display
-display_map = utils.display_map
-load_json = utils.load_json
-init_state = utils.init_state
+    variant_map = {
+        "steepest":  hill_climbing.steepest_ascent_hill_climbing,
+        "stochastic": hill_climbing.stochastic_hill_climbing,
+        "sideways":  hill_climbing.sideways_move_hill_climbing,
+        "random_restart": None,  # ditangani khusus di bawah
+    }
+
+    label_map = {
+        "steepest":       "Steepest Ascent Hill Climbing",
+        "stochastic":     "Stochastic Hill Climbing",
+        "sideways":       "Sideways Move Hill Climbing",
+        "random_restart": "Random Restart Hill Climbing",
+    }
+
+    print(f"\n{'='*60}")
+    print(f"  {label_map[variant_name]} — 3 Run")
+    print(f"{'='*60}")
+
+    for run_idx in range(1, 4):
+        init_st = hill_climbing.bikin_state_acak(kendaraan_template, kapal)
+        init_of = objective_function(init_st, kapal)
+
+        t0 = time.perf_counter()
+        if variant_name == "steepest":
+            res = hill_climbing.steepest_ascent_hill_climbing(
+                copy.deepcopy(init_st), kapal, max_iterations=3000, verbose=False)
+        elif variant_name == "stochastic":
+            res = hill_climbing.stochastic_hill_climbing(
+                copy.deepcopy(init_st), kapal, max_iterations=3000, num_candidates=10, verbose=False)
+        elif variant_name == "sideways":
+            res = hill_climbing.sideways_move_hill_climbing(
+                copy.deepcopy(init_st), kapal, max_iterations=3000,
+                max_sideways_move=100, num_candidates=10, verbose=False)
+        else:  # random_restart
+            res = hill_climbing.random_restart_hill_climbing(
+                kapal, max_restart=10, max_iterations_per_restart=1000,
+                initial_vehicles=copy.deepcopy(init_st), num_candidates=10, verbose=False)
+        durasi = time.perf_counter() - t0
+
+        final_of = res[1]
+        total_iter = res[2]
+        status = res.status if hasattr(res, "status") else "-"
+
+        print(f"\n  Run {run_idx}")
+        print(f"    Initial OF : {init_of}")
+        print(f"    Final OF   : {final_of}")
+        print(f"    Durasi     : {durasi:.4f} detik")
+        print(f"    Iterasi    : {total_iter}")
+        print(f"    Status     : {status}")
+
+    print()
 
 
 def main():
-    json_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "vehicles.json")
-    if not os.path.exists(json_path):
-        json_path = "src/vehicles.json"
-    vehicles, ship = utils.load_json(json_path)
-    state = utils.init_state(vehicles, ship)
+    while True:
+        print("\nPilih algoritma yang ingin dijalankan:\n")
+        print("1. Steepest Ascent Hill Climbing")
+        print("2. Stochastic Hill Climbing")
+        print("3. Sideways Move Hill Climbing")
+        print("4. Random Restart Hill Climbing")
+        print("5. Simulated Annealing")
+        print("6. Genetic Algorithm")
+        print("0. Keluar")
+        pilihan = input("Masukkan pilihan (0-6): ").strip()
 
-    print("\nINITIAL STATE")
-    print("SHIP")
-    utils.display(state, ship)
-    print("MAP")
-    utils.display_map(state, ship)
-
-    print("\nSWAP")
-    utils.swap(state, ship)
-    utils.display(state, ship)
-    print("MAP")
-    utils.display_map(state, ship)
-
-    print("\nMOVE")
-    utils.move(state, ship)
-    utils.display(state, ship)
-    print("MAP")
-    utils.display_map(state, ship)
-
-    # Tester simulated annealing
-    print("\nSIMULATED ANNEALING")
-    best_sa_state, best_sa_score = simulated_annealing.simulated_annealing(
-        state, ship, max_iter=100, init_temp=100, cooling_rate=0.99
-    )
-    print("\nBEST STATE (SA)")
-    utils.display(best_sa_state, ship)
-    print("BEST SCORE (SA):", best_sa_score)
-    print("MAP (SA)")
-    utils.display_map(best_sa_state, ship)
-
-    # Tester Hill Climbing (4 Varian)
-    print("\nHILL CLIMBING EXPERIMENT & VERIFICATION")
-    hill_climbing.verify_all_hill_climbing()
+        if pilihan == "0":
+            break
+        elif pilihan == "1":
+            _run_hc_variant("steepest")
+        elif pilihan == "2":
+            _run_hc_variant("stochastic")
+        elif pilihan == "3":
+            _run_hc_variant("sideways")
+        elif pilihan == "4":
+            _run_hc_variant("random_restart")
+        elif pilihan == "5":
+            main_simulated_annealing.main_simulated_annealing()
+        elif pilihan == "6":
+            genetic_algorithm.genetic_algorithm()
+        else:
+            print("Pilihan tidak valid.")
 
 
 if __name__ == "__main__":
