@@ -223,10 +223,10 @@ def display(vehicles: list[Vehicle], ship: Ship):
 
 #display map dan ship, regardless of vehicles keitung is_loaded enggak (tetep ditampilin)
 def display_map(vehicles: list[Vehicle], ship: Ship):
-    min_x = -ship.dimension.width
-    max_x = ship.dimension.width * 2
-    min_y = -ship.dimension.length
-    max_y = ship.dimension.length * 2
+    min_x = min([0]+[v.x for v in vehicles]) - 1
+    max_x = max([ship.dimension.width] + [v.x + v.dimension.width for v in vehicles]) 
+    min_y = min([0]+[v.y for v in vehicles])-1
+    max_y = max([ship.dimension.length] + [v.y + v.dimension.length for v in vehicles]) 
 
     map = [["." for _ in range(min_x, max_x + 1)] for _ in range(min_y, max_y + 1)]
 
