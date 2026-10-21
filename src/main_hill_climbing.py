@@ -3,11 +3,20 @@ import os
 import sys
 import time
 
-# Pastikan direktori saat ini masuk ke sys.path untuk impor lokal
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+# Pastikan path modul src tersedia
+_src_dir = os.path.dirname(os.path.abspath(__file__))
+if _src_dir not in sys.path:
+    sys.path.insert(0, _src_dir)
 
 import utils
-import hill_climbing
+from hill_climbing_variants import (
+    bikin_kendaraan_awal,
+    bikin_state_acak,
+    random_restart_hill_climbing,
+    sideways_move_hill_climbing,
+    steepest_ascent_hill_climbing,
+    stochastic_hill_climbing,
+)
 
 
 def get_json_path():
@@ -26,9 +35,9 @@ def get_json_path():
 
 
 def run_hc_variant(variant_name):
-    """Menjalankan satu varian Hill Climbing sebanyak 3 kali percobaan independen."""
+    """Menjalankan satu varian Hill Climbing sebanyak 3 kali percobaan independen dengan format output CLI konsisten."""
     json_path = get_json_path()
-    kendaraan_template = hill_climbing.bikin_kendaraan_awal(json_path)
+    kendaraan_template = bikin_kendaraan_awal(json_path)
     _, kapal = utils.load_json(json_path)
 
     label_map = {
@@ -39,27 +48,43 @@ def run_hc_variant(variant_name):
     }
 
     title = label_map.get(variant_name, variant_name)
-    print(f"\n{'=' * 60}")
-    print(f"  {title} — 3 Run")
-    print(f"{'=' * 60}")
+    print(f"\n{'=' * 65}")
+    print(f"  {title.upper()} — 3 RUN")
+    print(f"{'=' * 65}")
 
     summary = []
 
     for run_idx in range(1, 4):
-        init_st = hill_climbing.bikin_state_acak(kendaraan_template, kapal)
+        init_st = bikin_state_acak(kendaraan_template, kapal)
         init_of = utils.objective_function(init_st, kapal)
+
+        print(f"\nRUN {run_idx}")
+        print(f"State awal (objective function = {init_of}):")
+        utils.display(init_st, kapal)
 
         t0 = time.perf_counter()
         if variant_name == "steepest":
-            res = hill_climbing.steepest_ascent_hill_climbing(
+            res = steepest_ascent_hill_climbing(
                 copy.deepcopy(init_st), kapal, max_iterations=3000, verbose=False
             )
+            best_state = res.best_vehicles
+            best_of = res.best_score
+            total_iters = res.total_iterations
+            status = res.status
+            extra_info = None
+
         elif variant_name == "stochastic":
-            res = hill_climbing.stochastic_hill_climbing(
+            res = stochastic_hill_climbing(
                 copy.deepcopy(init_st), kapal, max_iterations=3000, num_candidates=10, verbose=False
             )
+            best_state = res.best_vehicles
+            best_of = res.best_score
+            total_iters = res.total_iterations
+            status = res.status
+            extra_info = None
+
         elif variant_name == "sideways":
-            res = hill_climbing.sideways_move_hill_climbing(
+            res = sideways_move_hill_climbing(
                 copy.deepcopy(init_st),
                 kapal,
                 max_iterations=3000,
@@ -67,8 +92,14 @@ def run_hc_variant(variant_name):
                 num_candidates=10,
                 verbose=False,
             )
+            best_state = res.best_vehicles
+            best_of = res.best_score
+            total_iters = res.total_iterations
+            status = res.status
+            extra_info = f"Jumlah sideways move: {res.sideways_moves}"
+
         elif variant_name == "random_restart":
-            res = hill_climbing.random_restart_hill_climbing(
+            res = random_restart_hill_climbing(
                 kapal,
                 max_restart=10,
                 max_iterations_per_restart=1000,
@@ -76,29 +107,45 @@ def run_hc_variant(variant_name):
                 num_candidates=10,
                 verbose=False,
             )
+            # Pastikan state terbaik adalah best state global sepanjang seluruh restart
+            best_state = res.best_vehicles
+            best_of = res.best_score
+            total_iters = sum(res.iterations_per_restart)
+            status = res.status
+            extra_info = f"Jumlah restart: {res.total_restarts}"
+            if hasattr(res, "initial_score") and res.initial_score is not None:
+                init_of = res.initial_score
         else:
             raise ValueError(f"Varian '{variant_name}' tidak dikenal.")
 
         durasi = time.perf_counter() - t0
-        final_of = res[1]
-        total_iter = res[2]
-        status = res.status if hasattr(res, "status") else "-"
 
-        print(f"\n  Run {run_idx}")
-        print(f"    Initial OF : {init_of}")
-        print(f"    Final OF   : {final_of}")
-        print(f"    Durasi     : {durasi:.4f} detik")
-        print(f"    Iterasi    : {total_iter}")
-        print(f"    Status     : {status}")
+        print(f"\nState terbaik (objective function = {best_of}):")
+        utils.display(best_state, kapal)
 
-        summary.append((run_idx, init_of, final_of, total_iter, durasi, status))
+        print("\nRingkasan run:")
+        print(f"- Objective function awal: {init_of}")
+        print(f"- Objective function terbaik: {best_of}")
+        print(f"- Jumlah iterasi: {total_iters}")
+        if extra_info:
+            print(f"- {extra_info}")
+        print(f"- Status berhenti: {status}")
+        print(f"- Durasi: {durasi:.4f} detik")
 
-    print(f"\n{'-' * 60}")
-    print(f"  RINGKASAN HASIL 3X RUN ({title})")
-    print(f"{'-' * 60}")
-    print(f"  {'Run':<6}{'Initial':<10}{'Final':<10}{'Iterasi':<12}{'Durasi (s)':<14}{'Status':<20}")
+        iter_summary = f"{total_iters}"
+        if variant_name == "sideways":
+            iter_summary = f"{total_iters} ({res.sideways_moves} sideways)"
+        elif variant_name == "random_restart":
+            iter_summary = f"{total_iters} ({res.total_restarts} restarts)"
+
+        summary.append((run_idx, init_of, best_of, iter_summary, durasi, status))
+
+    print(f"\n{'-' * 70}")
+    print(f"HASIL 3X RUN ({title})")
+    print(f"{'-' * 70}")
+    print(f"{'Run':<6}{'Initial':<10}{'Final':<10}{'Iterasi':<22}{'Durasi (s)':<14}{'Status':<20}")
     for run_i, init_s, fin_s, iters, dur, stat in summary:
-        print(f"  {run_i:<6}{init_s:<10}{fin_s:<10}{str(iters):<12}{dur:<14.4f}{stat:<20}")
+        print(f"{run_i:<6}{init_s:<10}{fin_s:<10}{iters:<22}{dur:<14.4f}{stat:<20}")
     print()
 
 
@@ -128,7 +175,6 @@ def main_hill_climbing(variant=None):
     if variant is not None:
         run_hc_variant(variant)
     else:
-        # Jalankan seluruh varian secara berurutan jika dipanggil tanpa argumen
         main_steepest_ascent()
         main_stochastic()
         main_sideways_move()
