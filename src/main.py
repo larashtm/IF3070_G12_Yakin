@@ -2,7 +2,7 @@ import utils
 import main_hill_climbing
 import main_simulated_annealing
 import simulated_annealing
-import genetic_algorithm
+import ga_run_experiments
 
 # Alias backward compatibility jika ada modul lain yang mengimpor dari main
 _run_hc_variant = main_hill_climbing.run_hc_variant
@@ -33,7 +33,7 @@ def main():
         elif pilihan == "5":
             main_simulated_annealing.main_simulated_annealing()
         elif pilihan == "6":
-            genetic_algorithm.genetic_algorithm()
+            ga_run_experiments.main()
         else:
             print("Pilihan tidak valid.")
 
