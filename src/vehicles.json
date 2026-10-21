@@ -1,7 +1,13 @@
 {
-  "ship": {"width": 10, "length": 10, "maxCapacity": 500},
+  "ship": {"width": 10, "length": 10, "maxCapacity": 50},
   "vehicles": [
     {"id": "Owen",  "width": 3, "length": 4, "orientation": "Horizontal", "shippingFee": 60, "weight": 5,  "eta": 3},
-    {"id": "Kucing",  "width": 2, "length": 3, "orientation": "Horizontal", "shippingFee": 40, "weight": 4,  "eta": 5}
+    {"id": "Kucing",  "width": 2, "length": 3, "orientation": "Vertical", "shippingFee": 40, "weight": 4,  "eta": 5},
+    {"id": "Fathy", "width": 3, "length": 3, "orientation": "Horizontal", "shippingFee": 55, "weight": 8, "eta": 2},
+    {"id": "Laras", "width": 2, "length": 4, "orientation": "Vertical", "shippingFee": 50, "weight": 7, "eta": 4},
+    {"id": "Tyara", "width": 3, "length": 2, "orientation": "Horizontal", "shippingFee": 45, "weight": 10, "eta": 6},
+    {"id": "Informatika", "width": 4, "length": 4, "orientation": "Vertical", "shippingFee": 65, "weight": 3, "eta": 3},
+    {"id": "Bumblebee", "width": 2, "length": 2, "orientation": "Horizontal", "shippingFee": 50, "weight": 6, "eta": 3},
+    {"id": "Pohon", "width": 2, "length": 5, "orientation": "Vertical", "shippingFee": 55, "weight": 13, "eta": 4}
   ]
 }
