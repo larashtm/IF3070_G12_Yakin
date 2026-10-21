@@ -42,6 +42,6 @@ State *neighbor* dapat didapatkan melalui:
 ## Authors
 | No | Nama | NIM | Kontribusi |
 | --- | --- | --- | --- |
-| 1 |  **Fathimah Nurhumaida Ramadhani** | 18223052 | **Simulated Annealing Lead** | 
-| 2 | **Laras Hati Mahendra** | 18223118 | **Hill Climbing (4 Tipe) & laporan** |
-| 3 | **Tyara Penelope Lumban Gaol** | 18224122 | **Genetic Algorithm Lead** |
+| 1 |  **Fathimah Nurhumaida Ramadhani** | 18223052 | **Simulated Annealing & Laporan** | 
+| 2 | **Laras Hati Mahendra** | 18223118 | **Hill Climbing (4 Tipe) & Laporan** |
+| 3 | **Tyara Penelope Lumban Gaol** | 18224122 | **Genetic Algorithm Lead & Laporan** |
