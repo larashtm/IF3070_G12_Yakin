@@ -1,11 +1,4 @@
-import copy
-import os
-import random
-import sys
-import time
-
-import matplotlib.patches as patches
-import matplotlib.pyplot as plt
+import copy, os, random, sys, time, matplotlib.patches as patches, matplotlib.pyplot as plt
 
 # atur path biar bisa import modul utils atau main dari root atau src/
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
