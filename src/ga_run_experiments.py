@@ -52,7 +52,7 @@ def run_config(vehicles,ship,colors,population_size,max_iter):
 
         tag=f"populasi={population_size},iterasi={max_iter},run={run}"
         initial_text=render_state(info["initial_state"],ship,f"State awal({tag})",info["initial_score"])
-        final_text=render_state(info["best_state"],ship,f"State akhir({tag})",best_score)
+        final_text=render_state(best_state,ship,f"State akhir({tag})",best_score)
 
         #simpenin state awal dan akhir dalam satu file teks 
         with open(
@@ -180,10 +180,7 @@ def plot_parameter_effect(experiment_groups,path):
     viz.save_figure(fig,path)
 
 
-def main(): 
-    data_path="sample_dummy.json"
-    if len(sys.argv)>1: 
-        data_path=sys.argv[1]
+def main(data_path: str): 
     vehicles,ship=utils.load_json(data_path)
     colors=viz.build_color_map(vehicles)
     os.makedirs(OUTPUT_DIR,exist_ok=True)
@@ -231,4 +228,4 @@ def main():
     plot_parameter_effect(experiment_groups,f"{OUTPUT_DIR}/parameter_effect.png")
 
 if __name__=="__main__": 
-    main()
+    main("vehicles.json")

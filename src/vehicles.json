@@ -17,15 +17,15 @@
     {"id": "HETI",        "width": 1, "length": 3, "orientation": "Vertical", "shippingFee": 61, "weight": 8, "eta": 9},
     {"id": "Jom",         "width": 3, "length": 3, "orientation": "Vertical", "shippingFee": 158, "weight": 54, "eta": 9},
     {"id": "MieAyam",     "width": 2, "length": 3, "orientation": "Horizontal", "shippingFee": 159, "weight": 35, "eta": 5},
-    {"id": "NasiPadang",   "width": 1, "length": 5, "orientation": "Vertical", "shippingFee": 69, "weight": 30, "eta": 8},
-    {"id": "QRIS",         "width": 3, "length": 2, "orientation": "Horizontal", "shippingFee": 157, "weight": 37, "eta": 5},
-    {"id": "RotiBakar",    "width": 3, "length": 3, "orientation": "Horizontal", "shippingFee": 157, "weight": 61, "eta": 8},
-    {"id": "Seblak",       "width": 3, "length": 2, "orientation": "Horizontal", "shippingFee": 163, "weight": 31, "eta": 10},
-    {"id": "UburUbur",     "width": 2, "length": 3, "orientation": "Vertical", "shippingFee": 202, "weight": 38, "eta": 6},
+    {"id": "NasiPadang",  "width": 1, "length": 5, "orientation": "Vertical", "shippingFee": 69, "weight": 30, "eta": 8},
+    {"id": "QRIS",        "width": 3, "length": 2, "orientation": "Horizontal", "shippingFee": 157, "weight": 37, "eta": 5},
+    {"id": "RotiBakar",   "width": 3, "length": 3, "orientation": "Horizontal", "shippingFee": 157, "weight": 61, "eta": 8},
+    {"id": "Seblak",      "width": 3, "length": 2, "orientation": "Horizontal", "shippingFee": 163, "weight": 31, "eta": 10},
+    {"id": "UburUbur",    "width": 2, "length": 3, "orientation": "Vertical", "shippingFee": 202, "weight": 38, "eta": 6},
     {"id": "Vox",         "width": 1, "length": 3, "orientation": "Vertical", "shippingFee": 96, "weight": 19, "eta": 3},
-    {"id": "Wibu",       "width": 2, "length": 3, "orientation": "Vertical", "shippingFee": 90, "weight": 33, "eta": 2},
-    {"id": "Xixixi",     "width": 1, "length": 2, "orientation": "Vertical", "shippingFee": 30, "weight": 13, "eta": 9},
-    {"id": "Yakult",     "width": 1, "length": 5, "orientation": "Horizontal", "shippingFee": 149, "weight": 17, "eta": 2},
+    {"id": "Wibu",        "width": 2, "length": 3, "orientation": "Vertical", "shippingFee": 90, "weight": 33, "eta": 2},
+    {"id": "Xixixi",      "width": 1, "length": 2, "orientation": "Vertical", "shippingFee": 30, "weight": 13, "eta": 9},
+    {"id": "Yakult",      "width": 1, "length": 5, "orientation": "Horizontal", "shippingFee": 149, "weight": 17, "eta": 2},
     {"id": "Zonk pls dai A",  "width": 1, "length": 2, "orientation": "Horizontal", "shippingFee": 83, "weight": 11, "eta": 1}
   ]
 }
