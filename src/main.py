@@ -1,6 +1,12 @@
-import utils, json, main_simulated_annealing, simulated_annealing
-#import hill_climbing, genetic_algorithm
-#import main_hill_climbing, main_genetic_algorithm
+import utils
+import main_hill_climbing
+import main_simulated_annealing
+import simulated_annealing
+import genetic_algorithm
+
+# Alias backward compatibility jika ada modul lain yang mengimpor dari main
+_run_hc_variant = main_hill_climbing.run_hc_variant
+
 
 def main():
     while True:
@@ -17,17 +23,17 @@ def main():
         if pilihan == "0":
             break
         elif pilihan == "1":
-            pass
+            main_hill_climbing.main_steepest_ascent()
         elif pilihan == "2":
-            pass
+            main_hill_climbing.main_stochastic()
         elif pilihan == "3":
-            pass
+            main_hill_climbing.main_sideways_move()
         elif pilihan == "4":
-            pass
+            main_hill_climbing.main_random_restart()
         elif pilihan == "5":
             main_simulated_annealing.main_simulated_annealing()
         elif pilihan == "6":
-            pass
+            genetic_algorithm.genetic_algorithm()
         else:
             print("Pilihan tidak valid.")
 

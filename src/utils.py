@@ -135,6 +135,19 @@ def objective_function(vehicles: list[Vehicle], ship: Ship) -> int:
     return total_uang
 
 
+def objective_function_bonus(vehicles: list[Vehicle], ship: Ship) -> int:
+    if exceed_capacity_limit(vehicles, ship):
+        return 0
+    if exceed_ship_limit(vehicles, ship):
+        return 0
+    if not not_overlapping(vehicles, ship):
+        return 0
+
+    jumlah_loaded = sum(v.is_loaded for v in vehicles)
+    total_eta = sum(v.eta for v in vehicles if v.is_loaded)
+    return jumlah_loaded * sum(v.eta for v in vehicles) - total_eta
+
+
 def swap(vehicles: list[Vehicle], ship: Ship):
     vehicle_a, vehicle_b = random.sample(vehicles, 2)
     old_a = (vehicle_a.x, vehicle_a.y, vehicle_a.is_loaded)

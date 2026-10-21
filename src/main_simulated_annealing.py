@@ -16,32 +16,38 @@ def main_simulated_annealing():
     vehicles, ship = utils.load_json("vehicles.json")
     state = utils.init_state(vehicles, ship) #ini bisa di initialize disini atau di main yang real main.py, tapi sementara disini dulu buat testing
 
+    choice = input("Objective Function (1 = Max Shipping Fee, 2 = Min ETA): ").strip()
+    if choice == "2":
+        objective = utils.objective_function_bonus
+
+    else:
+        objective = utils.objective_function
+
     summary = []
 
     for run in range(1, 4): #run 3x
         for i in range(100):
 
             state = utils.init_state(vehicles, ship)
-            if utils.objective_function(state, ship) > 0:
+            if objective(state, ship) > 0:
                 break
 
-        initial_score = utils.objective_function(state, ship)
+        initial_score = objective(state, ship)
 
         print(f"\nRUN {run}")
         print(f"State awal (objective function = {initial_score}):")
         utils.display(state, ship)
 
         best_state, best_score, objective_function_value, stuck_count, duration, acceptance_probabilities = simulated_annealing.simulated_annealing(
-            copy.deepcopy(state), ship, max_iter=1000, init_temp=30, cooling_rate=0.99, stuck_threshold=10)
+            copy.deepcopy(state), ship, max_iter=1000, init_temp=30, cooling_rate=0.99, stuck_threshold=10, objective=objective)
 
         print(f"State akhir (objective function = {best_score}):")
         utils.display(best_state, ship)
 
         summary.append((run, initial_score, best_score, stuck_count, duration))
 
-        # Plot objective function terhadap iterasi
         plot(objective_function_value, "Objective Function", run)
-        plot(acceptance_probabilities, "e^(deltaE / T)", run, start=1)
+        plot(acceptance_probabilities, "e^(deltaE / T)", run)
 
     print("\nHASIL 3X RUN")
     print(f"{'Run':<5}{'Initial':<10}{'Final':<10}{'Stuck':<8}{'Durasi (s)':<12}")
