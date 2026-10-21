@@ -5,7 +5,8 @@ import os
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
-
+import io
+from contextlib import redirect_stdout
 import utils
 import ga_visualization as viz
 from ga_genetic_algorithm import genetic_algorithm 
@@ -41,6 +42,15 @@ def run_config(vehicles,ship,population_size,max_iter):
         tag=f"populasi={population_size},iterasi={max_iter},run={run}"
         utils.display_image(info["initial_state"],ship,f"State awal({tag})",f"{folder}/run{run}_initial.png")
         utils.display_image(best_state,ship,f"State akhir({tag})",f"{folder}/run{run}_final.png")
+        buf = io.StringIO()
+        with redirect_stdout(buf):
+            print(f"State awal ({tag})")
+            utils.display_map(info["initial_state"], ship)
+            print()
+            print(f"State akhir ({tag})")
+            utils.display_map(best_state, ship)
+        with open(f"{folder}/run{run}_states.txt", "w", encoding="utf-8") as f:
+            f.write(buf.getvalue())
         #simpan grafik maksimum dan rata-rata populasi 
         viz.save_convergence_figure(
             info,f"Perkembangan objective({tag})",f"{folder}/run{run}_convergence.png"
