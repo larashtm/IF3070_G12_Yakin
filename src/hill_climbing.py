@@ -7,12 +7,15 @@ import time
 import matplotlib.patches as patches
 import matplotlib.pyplot as plt
 
-# atur path biar bisa import modul main dari root atau src/
+# atur path biar bisa import modul utils atau main dari root atau src/
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 try:
-    from main import Ship, Vehicle, move, objective_function, rotate, swap
+    from utils import Dimension, Ship, Vehicle, exceed_capacity_limit, exceed_ship_limit, move, not_overlapping, objective_function, rotate, swap
 except ImportError:
-    from src.main import Ship, Vehicle, move, objective_function, rotate, swap
+    try:
+        from src.utils import Dimension, Ship, Vehicle, exceed_capacity_limit, exceed_ship_limit, move, not_overlapping, objective_function, rotate, swap
+    except ImportError:
+        from main import Dimension, Ship, Vehicle, exceed_capacity_limit, exceed_ship_limit, move, not_overlapping, objective_function, rotate, swap
 
 # folder buat nyimpen hasil gambar
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -61,7 +64,10 @@ def get_random_neighbor(vehicles, ship):
 
     # aksi 2: tuker posisi 2 mobil
     if move_type == "swap":
-        swap(neighbor)
+        try:
+            swap(neighbor, ship)
+        except TypeError:
+            swap(neighbor)
         return neighbor
 
     # aksi 3: putar arah mobil (horizontal <-> vertikal)
@@ -319,17 +325,32 @@ def sideways_move_hill_climbing(initial_vehicles, ship, max_iterations=3000, max
 def bikin_state_acak(vehicles_template, ship):
     state = copy.deepcopy(vehicles_template)
     for v in state:
-        v.is_loaded = random.choice([True, False])
+        # acak orientasi terlebih dahulu
         v.orientation = random.choice(["Horizontal", "Vertical"])
         if v.orientation == "Vertical" and v.dimension.width > v.dimension.length:
             v.dimension.width, v.dimension.length = v.dimension.length, v.dimension.width
         elif v.orientation == "Horizontal" and v.dimension.length > v.dimension.width:
             v.dimension.width, v.dimension.length = v.dimension.length, v.dimension.width
 
+        v.is_loaded = random.choice([True, False])
         max_x = max(0, ship.dimension.width - v.dimension.width)
         max_y = max(0, ship.dimension.length - v.dimension.length)
-        v.x = random.randint(0, max_x)
-        v.y = random.randint(0, max_y)
+
+        if v.is_loaded:
+            # coba tempatkan tanpa overlap & dalam batas kapal (maks 200 percobaan)
+            placed = False
+            for _ in range(200):
+                v.x = random.randint(0, max_x)
+                v.y = random.randint(0, max_y)
+                if not_overlapping(state, ship) and not exceed_ship_limit([v], ship):
+                    placed = True
+                    break
+            if not placed:
+                # tidak bisa ditempatkan tanpa konflik — set unloaded
+                v.is_loaded = False
+        else:
+            v.x = random.randint(0, max_x)
+            v.y = random.randint(0, max_y)
     return state
 
 
@@ -389,11 +410,11 @@ def random_restart_hill_climbing(ship, max_restart=10, max_restarts=None, max_it
 
 # alias fungsi biar tetap kompatibel
 def hill_climbing(awal, ship, max_eval=3000, max_stuck=300, num_candidates=4, verbose=False):
-    t0 = time.process_time()
+    t0 = time.perf_counter()
     res = stochastic_hill_climbing(
         awal, ship, max_iterations=max_eval, num_candidates=num_candidates, verbose=verbose
     )
-    lama = time.process_time() - t0
+    lama = time.perf_counter() - t0
     return {
         "initial_state": copy.deepcopy(awal),
         "final_state": res[0],
@@ -480,6 +501,49 @@ def plot_deck(vehicles, ship, judul, ax):
         )
 
 
+# fungsi visualisasi pergerakan/transisi state (move, swap, rotate) untuk ilustrasi bin packing
+def generate_bin_packing_movement_plot(kapal=None, vehicles=None):
+    if kapal is None:
+        kapal = Ship(10, 10, 500)
+    if vehicles is None:
+        vehicles = bikin_kendaraan_awal()
+
+    fig, axes = plt.subplots(1, 4, figsize=(18, 4.5))
+
+    # 1. State Awal
+    st0 = copy.deepcopy(vehicles)
+    st0[0].x, st0[0].y, st0[0].is_loaded = 1, 1, True
+    if len(st0) > 1:
+        st0[1].x, st0[1].y, st0[1].is_loaded = 6, 2, True
+    plot_deck(st0, kapal, "1. State Awal\n(Initial State)", axes[0])
+
+    # 2. Movement (Move)
+    st_move = copy.deepcopy(st0)
+    st_move[0].x, st_move[0].y = 4, 1
+    plot_deck(st_move, kapal, "2. Pergerakan Koordinat\n(Move: V1 geser ke X=4)", axes[1])
+
+    # 3. Swap (Tukar Posisi)
+    st_swap = copy.deepcopy(st_move)
+    if len(st_swap) >= 2:
+        st_swap[0].x, st_swap[1].x = st_swap[1].x, st_swap[0].x
+        st_swap[0].y, st_swap[1].y = st_swap[1].y, st_swap[0].y
+    plot_deck(st_swap, kapal, "3. Pertukaran Posisi\n(Swap: V1 <-> V2)", axes[2])
+
+    # 4. Rotation (Rotate)
+    st_rotate = copy.deepcopy(st_swap)
+    target = st_rotate[0]
+    if target.orientation == "Horizontal":
+        target.orientation = "Vertical"
+    else:
+        target.orientation = "Horizontal"
+    target.dimension.width, target.dimension.length = target.dimension.length, target.dimension.width
+    plot_deck(st_rotate, kapal, "4. Rotasi Dimensi\n(Rotate: Orientasi berubah)", axes[3])
+
+    fig.suptitle("Ilustrasi Mekanisme Movement Transisi State (Bin Packing)", fontsize=13, fontweight="bold")
+    simpan_gambar(fig, "bin_packing_movement.png")
+    plt.close(fig)
+
+
 # simpan plot ke file gambar
 def simpan_gambar(gambar, nama):
     os.makedirs(OUTPUT_DIR, exist_ok=True)
@@ -490,20 +554,42 @@ def simpan_gambar(gambar, nama):
     return lokasi
 
 
-# bikin data kendaraan awal buat uji coba
-def bikin_kendaraan_awal():
+# bikin data kendaraan awal buat uji coba (mengambil dari vehicles.json jika ada, atau fallback)
+def bikin_kendaraan_awal(json_path=None):
+    if json_path is None:
+        json_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "vehicles.json")
+    if os.path.exists(json_path):
+        try:
+            from utils import load_json
+            veh_list, _ = load_json(json_path)
+            if veh_list:
+                return veh_list
+        except Exception:
+            pass
+    # Fallback: vehicles.json tidak ditemukan — gunakan data dummy yang kompatibel
+    # Vehicle(id, width, length, orientation, shippingFee, weight, eta)
     v1 = Vehicle("V1", 2, 4, "Horizontal", 150, 200, 1)
-    v1.x, v1.y, v1.is_loaded = 0, 0, True
     v2 = Vehicle("V2", 2, 4, "Horizontal", 200, 300, 2)
-    v2.x, v2.y, v2.is_loaded = 3, 0, True
-    v3 = Vehicle("V3", 3, 3, "Vertical", 80, 100, 3)
+    v3 = Vehicle("V3", 3, 3, "Vertical",   80,  100, 3)
     return [v1, v2, v3]
 
 
 # jalanin eksperimen lengkap 4 varian hill climbing dengan 3 kali percobaan (Run 1, Run 2, Run 3)
-def run_experiment(show_plot=True):
-    kapal = Ship(10, 10, 1000)
-    kendaraan_template = bikin_kendaraan_awal()
+def run_experiment(show_plot=True, json_path=None):
+    if json_path is None:
+        json_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "vehicles.json")
+    
+    kapal = None
+    if os.path.exists(json_path):
+        try:
+            from utils import load_json
+            kendaraan_template, kapal = load_json(json_path)
+        except Exception:
+            pass
+
+    if kapal is None:
+        kapal = Ship(10, 10, 1000)
+        kendaraan_template = bikin_kendaraan_awal()
 
     # label percobaan
     percobaan_list = ["Run 1", "Run 2", "Run 3"]
@@ -524,6 +610,9 @@ def run_experiment(show_plot=True):
     if not show_plot:
         plt.close(fig_awal)
 
+    # 1b. generate ilustrasi transisi/movement bin packing
+    generate_bin_packing_movement_plot(kapal, kendaraan_template)
+
     # struktur data untuk merekam seluruh hasil eksperimen (12 baris)
     daftar_hasil = []
 
@@ -540,9 +629,9 @@ def run_experiment(show_plot=True):
     # 1. Steepest Ascent Hill Climbing (Run 1, 2, 3)
     for run_label in percobaan_list:
         init_st = copy.deepcopy(initial_states_per_run[run_label])
-        t0 = time.process_time()
+        t0 = time.perf_counter()
         res = steepest_ascent_hill_climbing(init_st, kapal, max_iterations=3000, num_candidates=None, verbose=False)
-        durasi = time.process_time() - t0
+        durasi = time.perf_counter() - t0
 
         item = {
             "algoritma": "Steepest Ascent",
@@ -562,9 +651,9 @@ def run_experiment(show_plot=True):
     # 2. Stochastic Hill Climbing (Run 1, 2, 3)
     for run_label in percobaan_list:
         init_st = copy.deepcopy(initial_states_per_run[run_label])
-        t0 = time.process_time()
+        t0 = time.perf_counter()
         res = stochastic_hill_climbing(init_st, kapal, max_iterations=3000, num_candidates=10, verbose=False)
-        durasi = time.process_time() - t0
+        durasi = time.perf_counter() - t0
 
         item = {
             "algoritma": "Stochastic",
@@ -584,9 +673,9 @@ def run_experiment(show_plot=True):
     # 3. Sideways Move Hill Climbing (Run 1, 2, 3)
     for run_label in percobaan_list:
         init_st = copy.deepcopy(initial_states_per_run[run_label])
-        t0 = time.process_time()
+        t0 = time.perf_counter()
         res = sideways_move_hill_climbing(init_st, kapal, max_iterations=3000, max_sideways_move=100, num_candidates=10, verbose=False)
-        durasi = time.process_time() - t0
+        durasi = time.perf_counter() - t0
 
         item = {
             "algoritma": "Sideways Move",
@@ -606,9 +695,9 @@ def run_experiment(show_plot=True):
     # 4. Random Restart Hill Climbing (Run 1, 2, 3)
     for run_label in percobaan_list:
         init_st = copy.deepcopy(initial_states_per_run[run_label])
-        t0 = time.process_time()
+        t0 = time.perf_counter()
         res = random_restart_hill_climbing(kapal, max_restart=10, max_iterations_per_restart=1000, initial_vehicles=init_st, num_candidates=10, verbose=False)
-        durasi = time.process_time() - t0
+        durasi = time.perf_counter() - t0
 
         item = {
             "algoritma": "Random Restart",
@@ -888,6 +977,7 @@ def verify_all_hill_climbing():
         "stochastic_run1.png",
         "sideways_move_run1.png",
         "random_restart_run1.png",
+        "bin_packing_movement.png",
     ]
     for fname in required_files:
         fpath = os.path.join(OUTPUT_DIR, fname)
