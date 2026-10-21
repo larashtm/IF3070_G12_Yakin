@@ -1,6 +1,7 @@
 import utils, simulated_annealing, matplotlib.pyplot as plt, copy
 
 #display sebelumnya disini, tapi sementara ga dipake dulu biar ga kebanyakan output
+#update: display jadinya dimasukin ke function
 
 def plot(y, ylabel, run, start=0):
     plt.figure(figsize=(10, 5))
@@ -12,7 +13,7 @@ def plot(y, ylabel, run, start=0):
 
 
 def main_simulated_annealing():
-    vehicles, ship = utils.load_json("src/vehicles.json")
+    vehicles, ship = utils.load_json("vehicles.json")
     state = utils.init_state(vehicles, ship) #ini bisa di initialize disini atau di main yang real main.py, tapi sementara disini dulu buat testing
 
     summary = []
@@ -25,8 +26,16 @@ def main_simulated_annealing():
                 break
 
         initial_score = utils.objective_function(state, ship)
+
+        print(f"\nRUN {run}")
+        print(f"State awal (objective function = {initial_score}):")
+        utils.display(state, ship)
+
         best_state, best_score, objective_function_value, stuck_count, duration, acceptance_probabilities = simulated_annealing.simulated_annealing(
             copy.deepcopy(state), ship, max_iter=1000, init_temp=30, cooling_rate=0.99, stuck_threshold=10)
+
+        print(f"State akhir (objective function = {best_score}):")
+        utils.display(best_state, ship)
 
         summary.append((run, initial_score, best_score, stuck_count, duration))
 
@@ -39,7 +48,7 @@ def main_simulated_annealing():
     for run, init_s, final_s, stuck, dur in summary:
         print(f"{run:<5}{init_s:<10}{final_s:<10}{stuck:<8}{dur:<12.4f}")
 
-    plt.show() #ini jadi keluar semua barengan, nanti revisi lagi mau gimana
+    plt.show(block=False) #ini jadi keluar semua barengan, nanti revisi lagi mau gimana
 
 if __name__ == "__main__":
     main_simulated_annealing()
