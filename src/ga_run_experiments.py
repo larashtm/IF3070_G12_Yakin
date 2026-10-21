@@ -11,12 +11,12 @@ from contextlib import redirect_stdout
 import utils
 import ga_visualization as viz
 from ga_genetic_algorithm import genetic_algorithm 
-
+from pathlib import Path
 
 #Time untuk menjalankan genetic algorithm 
 
 #pengaturan eksperimen
-OUTPUT_DIR="../output/ga"
+OUTPUT_DIR="output/ga"
 NUM_RUNS=3
 MUTATION_RATE=0.15
 PRINT_STATES=True 
@@ -180,8 +180,9 @@ def plot_parameter_effect(experiment_groups,path):
     viz.save_figure(fig,path)
 
 
-def main(data_path: str): 
-    vehicles,ship=utils.load_json(data_path)
+def main(): 
+    data_path=Path(__file__).resolve().parent/"vehicles.json"
+    vehicles,ship=utils.load_json(str(data_path))
     colors=viz.build_color_map(vehicles)
     os.makedirs(OUTPUT_DIR,exist_ok=True)
 
@@ -228,4 +229,4 @@ def main(data_path: str):
     plot_parameter_effect(experiment_groups,f"{OUTPUT_DIR}/parameter_effect.png")
 
 if __name__=="__main__": 
-    main("vehicles.json")
+    main()
