@@ -5,8 +5,6 @@ import os
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
-import io 
-from contextlib import redirect_stdout
 
 import utils
 import ga_visualization as viz
@@ -19,8 +17,6 @@ from pathlib import Path
 OUTPUT_DIR="output/ga"
 NUM_RUNS=3
 MUTATION_RATE=0.15
-PRINT_STATES=True 
-SAVE_STATE_IMAGES =False
 
 #eksperimen 1:populasi tetap, iterasi berubah 
 POP_CONTROL=30
@@ -30,16 +26,8 @@ ITER_VARIATIONS=[50,100,200]
 ITER_CONTROL=100
 POP_VARIATIONS=[10,30,60]
 
-#nangkepin hasil displaymap supaya kesimpan ke file
-def render_state(state,ship,title,score): 
-    buffer=io.StringIO()
-    with redirect_stdout(buffer): 
-        utils.display_map(state,ship)
-
-    return f"{title} (objective function-{score})\n{buffer.getvalue()}"
-
 #jalanin satu konfigurasi sebanyak NUM_RUNS kali 
-def run_config(vehicles,ship,colors,population_size,max_iter): 
+def run_config(vehicles,ship,population_size,max_iter): 
     folder=f"{OUTPUT_DIR}/pop{population_size}_iter{max_iter}"
     os.makedirs(folder,exist_ok=True)
 
@@ -51,21 +39,8 @@ def run_config(vehicles,ship,colors,population_size,max_iter):
         best_state,best_score,info=genetic_algorithm(vehicles,ship,population_size=population_size,max_iter=max_iter,mutation_rate=MUTATION_RATE,seed=seed)
 
         tag=f"populasi={population_size},iterasi={max_iter},run={run}"
-        initial_text=render_state(info["initial_state"],ship,f"State awal({tag})",info["initial_score"])
-        final_text=render_state(best_state,ship,f"State akhir({tag})",best_score)
-
-        #simpenin state awal dan akhir dalam satu file teks 
-        with open(
-            f"{folder}/run{run}_states.txt","w",encoding="utf-8",) as file: file.write(initial_text+"\n"+final_text)
-
-        #tampilin juga di terminal 
-        if PRINT_STATES: 
-            print(initial_text)
-            print(final_text)
-        #simpan png kalau diaktifin 
-        if SAVE_STATE_IMAGES:
-            viz.save_state_figure(info["initial_state"],ship,colors,f"State awal({tag})",f"{folder}/run{run}_initial.png")
-            viz.save_state_figure(best_state,ship,colors,f"State akhir({tag})",f"{folder}/run{run}_final.png")
+        utils.display_image(info["initial_state"],ship,f"State awal({tag})",f"{folder}/run{run}_initial.png")
+        utils.display_image(best_state,ship,f"State akhir({tag})",f"{folder}/run{run}_final.png")
         #simpan grafik maksimum dan rata-rata populasi 
         viz.save_convergence_figure(
             info,f"Perkembangan objective({tag})",f"{folder}/run{run}_convergence.png"
@@ -183,7 +158,6 @@ def plot_parameter_effect(experiment_groups,path):
 def main(): 
     data_path=Path(__file__).resolve().parent/"vehicles.json"
     vehicles,ship=utils.load_json(str(data_path))
-    colors=viz.build_color_map(vehicles)
     os.makedirs(OUTPUT_DIR,exist_ok=True)
 
     plan=[
@@ -209,7 +183,7 @@ def main():
             
             if config not in all_results:
                 all_results[config]=run_config(
-                    vehicles,ship,colors,
+                    vehicles,ship,
                     population_size,max_iter,
                 )
             experiments.append({
