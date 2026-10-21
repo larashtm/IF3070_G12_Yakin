@@ -17,12 +17,13 @@ def get_neighbor(vehicles, ship):
         utils.rotate(neighbor, ship)
     return neighbor
 
-def simulated_annealing(initial_state, ship, max_iter=1000, init_temp=30, cooling_rate=0.99, stuck_threshold=10):  #awalnya kan pake 100, tapi ganti 1000 biar keliatan pola pendinginan
+
+def simulated_annealing(initial_state, ship, max_iter=1000, init_temp=30, cooling_rate=0.99, stuck_threshold=10, objective=utils.objective_function):  #awalnya kan pake 100, tapi ganti 1000 biar keliatan pola pendinginan
     #initialize
     start_time = time.perf_counter()
     #yang T besar <0.5 apa ya? cek catetan dulu
     current_state = copy.deepcopy(initial_state)
-    current_score = utils.objective_function(current_state, ship)
+    current_score = objective(current_state, ship)
     best_state = copy.deepcopy(current_state)
     best_score = current_score
     temperature = init_temp
@@ -36,7 +37,7 @@ def simulated_annealing(initial_state, ship, max_iter=1000, init_temp=30, coolin
 
     for i in range(max_iter):
         neighbor_state = get_neighbor(current_state, ship)
-        neighbor_score = utils.objective_function(neighbor_state, ship)
+        neighbor_score = objective(neighbor_state, ship)
 
         #rumus euler delta T/t
         delta = neighbor_score - current_score
