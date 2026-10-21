@@ -39,9 +39,8 @@ def main_simulated_annealing():
 
         summary.append((run, initial_score, best_score, stuck_count, duration))
 
-        # Plot objective function terhadap iterasi
         plot(objective_function_value, "Objective Function", run)
-        plot(acceptance_probabilities, "e^(deltaE / T)", run, start=1)
+        plot(acceptance_probabilities, "e^(deltaE / T)", run)
 
     print("\nHASIL 3X RUN")
     print(f"{'Run':<5}{'Initial':<10}{'Final':<10}{'Stuck':<8}{'Durasi (s)':<12}")
