@@ -18,7 +18,7 @@ def main_simulated_annealing():
 
     summary = []
 
-    for run in range(0, 3): #run 3x
+    for run in range(1, 4): #run 3x
         for i in range(100):
 
             state = utils.init_state(vehicles, ship)
