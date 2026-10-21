@@ -1,0 +1,7 @@
+{
+  "ship": {"width": 10, "length": 10, "maxCapacity": 500},
+  "vehicles": [
+    {"id": "Owen",  "width": 3, "length": 4, "orientation": "Horizontal", "shippingFee": 60, "weight": 5,  "eta": 3},
+    {"id": "Kucing",  "width": 2, "length": 3, "orientation": "Horizontal", "shippingFee": 40, "weight": 4,  "eta": 5}
+  ]
+}

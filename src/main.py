@@ -1,146 +1,94 @@
-import random
+import os
+import sys
+import json
+import utils
+import hill_climbing
+import simulated_annealing
+import genetic_algorithm
 
-class Vehicle:
-    def __init__(self, id: str, width: int, length: int, orientation: str, shippingFee: int, weight: int, eta: int):
-        self.id = id
-        self.dimension = Dimension(width, length)
-        self.orientation = orientation
-        self.shippingFee = shippingFee
-        self.weight = weight
-        self.eta = eta
-        self.is_loaded = False 
-
-        self.x = 0 
-        self.y = 0
-
-
-class Ship:
-    def __init__(self, width: int, length: int, maxCapacity: int):
-        self.dimension = Dimension(width, length)
-        self.maxCapacity = maxCapacity
-
-
-class Dimension:
-    def __init__(self, width: int, length: int):
-        self.width = width
-        self.length = length
-
-
-def shipping_fee(vehicles: list[Vehicle]) -> int:
-    return sum(vehicle.shippingFee for vehicle in vehicles if vehicle.is_loaded)
-
-
-def not_overlapping(vehicles: list[Vehicle], ship: Ship) -> bool:
-    # kumpulin semua vehicle di kapalnya 
-    vehicle_in_ship = []
-    for vehicle in vehicles: 
-        if vehicle.is_loaded: 
-            vehicle_in_ship.append(vehicle)
-
-    # bandingin setiap vehicle satu dengan lain 
-    jumlah_vehicle = len(vehicle_in_ship)
-    for i in range(jumlah_vehicle): 
-        vehicle_a = vehicle_in_ship[i]
-
-        for j in range(i + 1, jumlah_vehicle): 
-            vehicle_b = vehicle_in_ship[j]
-            # ngitung batas fisik 
-            a_right = vehicle_a.x + vehicle_a.dimension.width
-            a_below = vehicle_a.y + vehicle_a.dimension.length 
-
-            b_right = vehicle_b.x + vehicle_b.dimension.width 
-            b_below = vehicle_b.y + vehicle_b.dimension.length 
-
-            # cek apakah posisinya aman di sumbu mendatar (X) atau menurun (Y)
-            aman_x = (a_right <= vehicle_b.x) or (vehicle_a.x >= b_right)
-            aman_y = (a_below <= vehicle_b.y) or (vehicle_a.y >= b_below)
-
-            # jika tidak aman di X maupun di Y, berarti overlap
-            if not (aman_x or aman_y): 
-                return False 
-                
-    return True
-
-
-def exceed_ship_limit(vehicles: list[Vehicle], ship: Ship) -> bool:
-    for vehicle in vehicles: 
-        if not vehicle.is_loaded: 
-            continue # ngelewat vehicle yang gak di kapal 
-
-        left = vehicle.x 
-        above = vehicle.y 
-        right = vehicle.x + vehicle.dimension.width 
-        below = vehicle.y + vehicle.dimension.length
-
-        if left < 0 or above < 0 or right > ship.dimension.width or below > ship.dimension.length: 
-            return True 
-
-    return False # artinya aman, semua di dalam garis 
-    
-
-def exceed_capacity_limit(vehicles: list[Vehicle], ship: Ship) -> bool:
-    total_weight = sum(v.weight for v in vehicles if v.is_loaded)
-    if total_weight > ship.maxCapacity:
-        return True
-    else:
-        return False
-
-
-def objective_function(vehicles: list[Vehicle], ship: Ship) -> int: 
-    if exceed_capacity_limit(vehicles, ship): 
-        return 0 
-    if exceed_ship_limit(vehicles, ship): 
-        return 0 
-    if not not_overlapping(vehicles, ship): 
-        return 0
-    total_uang = shipping_fee(vehicles)
-    return total_uang
-
-
-def swap(vehicles: list[Vehicle]):
-    loaded_vehicles = [v for v in vehicles if v.is_loaded]
-    target_list = loaded_vehicles if len(loaded_vehicles) >= 2 else vehicles
+# Re-ekspor objek & helper agar tetap backward-compatible bila diimpor dari main
+Vehicle = utils.Vehicle
+Ship = utils.Ship
+Dimension = utils.Dimension
+shipping_fee = utils.shipping_fee
+not_overlapping = utils.not_overlapping
+exceed_ship_limit = utils.exceed_ship_limit
+exceed_capacity_limit = utils.exceed_capacity_limit
+objective_function = utils.objective_function
+# Re-ekspor fungsi dengan wrapper toleran terhadap argumen ship opsional
+def swap(vehicles, ship=None):
+    if ship is not None:
+        return utils.swap(vehicles, ship)
+    # Jika dipanggil tanpa ship (format awal hill climbing), lakukan swap koordinat
+    loaded = [v for v in vehicles if v.is_loaded]
+    target_list = loaded if len(loaded) >= 2 else vehicles
     if len(target_list) >= 2:
-        vehicle_a, vehicle_b = random.sample(target_list, 2)
-        vehicle_a.x, vehicle_b.x = vehicle_b.x, vehicle_a.x
-        vehicle_a.y, vehicle_b.y = vehicle_b.y, vehicle_a.y
+        import random
+        va, vb = random.sample(target_list, 2)
+        va.x, vb.x = vb.x, va.x
+        va.y, vb.y = vb.y, va.y
 
 
-def move(vehicles: list[Vehicle], ship: Ship):
-    vehicle = random.choice(vehicles)
-    max_x = max(0, ship.dimension.width - vehicle.dimension.width)
-    max_y = max(0, ship.dimension.length - vehicle.dimension.length)
-    vehicle.x = random.randint(0, max_x)
-    vehicle.y = random.randint(0, max_y)
+def move(vehicles, ship):
+    return utils.move(vehicles, ship)
 
 
-def rotate(vehicles: list[Vehicle], ship: Ship = None):
-    vehicle = random.choice(vehicles)
-
-    if vehicle.orientation == "Horizontal":
-        vehicle.orientation = "Vertical"
+def rotate(vehicles, ship=None):
+    if ship is not None:
+        return utils.rotate(vehicles, ship)
+    import random
+    v = random.choice(vehicles)
+    if v.orientation == "Horizontal":
+        v.orientation = "Vertical"
     else:
-        vehicle.orientation = "Horizontal"
-
-    vehicle.dimension.width, vehicle.dimension.length = vehicle.dimension.length, vehicle.dimension.width
-
-    if ship is not None and vehicle.is_loaded:
-        if vehicle.x + vehicle.dimension.width > ship.dimension.width:
-            vehicle.x = max(0, ship.dimension.width - vehicle.dimension.width)
-        if vehicle.y + vehicle.dimension.length > ship.dimension.length:
-            vehicle.y = max(0, ship.dimension.length - vehicle.dimension.length)
+        v.orientation = "Horizontal"
+    v.dimension.width, v.dimension.length = v.dimension.length, v.dimension.width
+display = utils.display
+display_map = utils.display_map
+load_json = utils.load_json
+init_state = utils.init_state
 
 
-def display(vehicles: list[Vehicle], ship: Ship):
-    grid = [["." for _ in range(ship.dimension.width)]
-            for _ in range(ship.dimension.length)]
+def main():
+    json_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "vehicles.json")
+    if not os.path.exists(json_path):
+        json_path = "src/vehicles.json"
+    vehicles, ship = utils.load_json(json_path)
+    state = utils.init_state(vehicles, ship)
 
-    for v in vehicles:
-        if v.is_loaded:
-            for x in range(v.x, v.x + v.dimension.width):
-                for y in range(v.y, v.y + v.dimension.length):
-                    if 0 <= x < ship.dimension.width and 0 <= y < ship.dimension.length:
-                        grid[y][x] = v.id[0]
+    print("\nINITIAL STATE")
+    print("SHIP")
+    utils.display(state, ship)
+    print("MAP")
+    utils.display_map(state, ship)
 
-    for row in grid:
-        print("".join(row))
+    print("\nSWAP")
+    utils.swap(state, ship)
+    utils.display(state, ship)
+    print("MAP")
+    utils.display_map(state, ship)
+
+    print("\nMOVE")
+    utils.move(state, ship)
+    utils.display(state, ship)
+    print("MAP")
+    utils.display_map(state, ship)
+
+    # Tester simulated annealing
+    print("\nSIMULATED ANNEALING")
+    best_sa_state, best_sa_score = simulated_annealing.simulated_annealing(
+        state, ship, max_iter=100, init_temp=100, cooling_rate=0.99
+    )
+    print("\nBEST STATE (SA)")
+    utils.display(best_sa_state, ship)
+    print("BEST SCORE (SA):", best_sa_score)
+    print("MAP (SA)")
+    utils.display_map(best_sa_state, ship)
+
+    # Tester Hill Climbing (4 Varian)
+    print("\nHILL CLIMBING EXPERIMENT & VERIFICATION")
+    hill_climbing.verify_all_hill_climbing()
+
+
+if __name__ == "__main__":
+    main()
