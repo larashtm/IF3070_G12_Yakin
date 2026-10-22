@@ -1,0 +1,4 @@
+algoritma,percobaan,initial_of,final_of,durasi_detik,jumlah_iterasi,status
+Random Restart,1,1412,2116,0.1087,27,Max Restart Reached
+Random Restart,2,2018,2018,0.0857,21,Max Restart Reached
+Random Restart,3,1192,2152,0.2051,29,Max Restart Reached

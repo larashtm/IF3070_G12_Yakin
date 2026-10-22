@@ -1,6 +1,5 @@
 from matplotlib.patches import Rectangle
-import utils 
-import matplotlib.pyplot as plt 
+import utils, matplotlib.pyplot as plt 
 
 #satu warna tetap per id kendaraan, supaya sama di state awal & akhir
 def build_color_map(vehicles): 

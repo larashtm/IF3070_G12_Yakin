@@ -255,5 +255,3 @@ def display_image(vehicles: list[Vehicle], ship: Ship, title: str = "State kapal
         plt.close(fig)
     else:
         plt.show()
-
-

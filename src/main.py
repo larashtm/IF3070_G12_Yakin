@@ -1,8 +1,4 @@
-import utils
-import main_hill_climbing
-import main_simulated_annealing
-import simulated_annealing
-import ga_run_experiments
+import utils, main_hill_climbing, main_simulated_annealing, ga_run_experiments
 
 # Alias backward compatibility jika ada modul lain yang mengimpor dari main
 _run_hc_variant = main_hill_climbing.run_hc_variant

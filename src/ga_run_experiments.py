@@ -1,21 +1,24 @@
-import csv
-import statistics
-import sys
-import os
-import matplotlib
+import csv, statistics, os, matplotlib 
 matplotlib.use("Agg")
-import matplotlib.pyplot as plt
-import io
+import matplotlib.pyplot as plt, io
 from contextlib import redirect_stdout
-import utils
-import ga_visualization as viz
+import utils, ga_visualization as viz
 from ga_genetic_algorithm import genetic_algorithm 
 from pathlib import Path
+
+# bikin folder final[x] baru, nomornya lanjut dari yang sudah ada (kosong -> final1)
+def new_final_folder(base):
+    os.makedirs(base, exist_ok=True)
+    nums = [int(n[5:]) for n in os.listdir(base) if n.startswith("final") and n[5:].isdigit()]
+    folder = os.path.join(base, f"final{max(nums, default=0) + 1}")
+    os.makedirs(folder)
+    return folder
 
 #Time untuk menjalankan genetic algorithm 
 
 #pengaturan eksperimen
-OUTPUT_DIR: Path = Path(__file__).resolve().parent.parent / "output" / "ga"
+BASE_DIR: Path = Path(__file__).resolve().parent.parent / "output" / "genetic_algorithm"
+output_dir: Path = BASE_DIR #nanti diganti jadi folder final[x] pas main() jalan
 NUM_RUNS=3
 MUTATION_RATE=0.15
 
@@ -29,7 +32,7 @@ POP_VARIATIONS=[10,30,60]
 
 #jalanin satu konfigurasi sebanyak NUM_RUNS kali 
 def run_config(vehicles,ship,population_size,max_iter): 
-    folder=f"{OUTPUT_DIR}/pop{population_size}_iter{max_iter}"
+    folder=f"{output_dir}/pop{population_size}_iter{max_iter}"
     os.makedirs(folder,exist_ok=True)
 
     results=[]
@@ -166,13 +169,14 @@ def plot_parameter_effect(experiment_groups,path):
 
 
 def main(): 
+    global output_dir
+    output_dir=Path(new_final_folder(BASE_DIR)) #tiap run masuk folder final baru
     data_path=Path(__file__).resolve().parent/"vehicles.json"
     vehicles,ship=utils.load_json(str(data_path))
-    os.makedirs(OUTPUT_DIR,exist_ok=True)
 
     plan=[
         ("Eksperimen 1","iterasi",ITER_VARIATIONS,POP_CONTROL),
-        ("Eskperimen 2","populasi",POP_VARIATIONS,ITER_CONTROL),
+        ("Eksperimen 2","populasi",POP_VARIATIONS,ITER_CONTROL),
     ]
 
     all_results={}
@@ -208,9 +212,9 @@ def main():
 
 
         })
-    save_summary_csv(all_results,f"{OUTPUT_DIR}/summaryGA.csv")
+    save_summary_csv(all_results,f"{output_dir}/summaryGA.csv")
 
-    plot_parameter_effect(experiment_groups,f"{OUTPUT_DIR}/parameter_effect.png")
+    plot_parameter_effect(experiment_groups,f"{output_dir}/parameter_effect.png")
 
 if __name__=="__main__": 
     main()

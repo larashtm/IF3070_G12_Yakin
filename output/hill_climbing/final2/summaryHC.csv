@@ -1,0 +1,4 @@
+algoritma,percobaan,initial_of,final_of,durasi_detik,jumlah_iterasi,status
+Steepest Ascent,1,1678,1980,0.1389,3,Local Optima
+Steepest Ascent,2,1369,1741,0.1165,2,Local Optima
+Steepest Ascent,3,1404,1991,0.2920,3,Local Optima

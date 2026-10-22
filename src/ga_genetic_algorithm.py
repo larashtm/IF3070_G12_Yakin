@@ -1,7 +1,4 @@
-import copy 
-import random 
-import time 
-import utils 
+import copy, random, time, utils 
 
 # satu state isinya seluruh kendaraan
 # setiap kendaraan simpan x, y, arah, dan loaded
@@ -156,7 +153,6 @@ def repair_state(state, ship):
         if max_x < 0 or max_y < 0: 
             continue
 
-
         #aktifin sementara agar ikut diperiksa oleh utils
         vehicle.is_loaded = True 
         if utils.exceed_capacity_limit(state,ship):
@@ -224,8 +220,6 @@ def crossover(parent_a, parent_b): #buat satu anak dari dua parent
         child.append(vehicle)
     return child
 
-
-
     
 def mutate (state,ship,mutation_rate): 
     #perbaiki dahulu karena operasi utils mengandalkan state awal valid
@@ -248,6 +242,7 @@ def mutate (state,ship,mutation_rate):
 
     park_unloaded(state,ship)
     return state 
+
 
 def park_unloaded(state,ship): 
     #kendaran yang tidak muat ditaruh di kanan kapal 

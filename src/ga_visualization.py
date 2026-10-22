@@ -1,6 +1,4 @@
-import os 
-
-import matplotlib.pyplot as plt 
+import os, matplotlib.pyplot as plt 
 
 #objective maks dan rata rata populasi
 def plot_convergence(ax,info,title):
