@@ -1,4 +1,7 @@
-import random, copy, json
+import random, copy, json, os
+import matplotlib.pyplot as plt
+from matplotlib.patches import Rectangle
+import utils_visualisation as visual
 
 #class & objects
 class Vehicle:
@@ -207,6 +210,7 @@ def rotate(vehicles: list[Vehicle], ship: Ship):
 
 
 #display ship
+#display ship
 def display(vehicles: list[Vehicle], ship: Ship):
     map = [["." for i in range(ship.dimension.width)] for i in range(ship.dimension.length)]
 
@@ -219,7 +223,6 @@ def display(vehicles: list[Vehicle], ship: Ship):
 
     for row in map:
         print("".join(row))
-
 
 #display map dan ship, regardless of vehicles keitung is_loaded enggak (tetep ditampilin)
 def display_map(vehicles: list[Vehicle], ship: Ship):
@@ -241,3 +244,16 @@ def display_map(vehicles: list[Vehicle], ship: Ship):
 
     for row in map:
         print("".join(row))
+
+def display_image(vehicles: list[Vehicle], ship: Ship, title: str = "State kapal", save_path: str = None):
+    W, L = ship.dimension.width, ship.dimension.length
+    fig, ax = plt.subplots(figsize=(max(7, 0.37*(2*W+5)), max(5, 0.36*L+2.2)))
+    visual.draw_state(ax, vehicles, ship, visual.build_color_map(vehicles), title)
+    if save_path:
+        os.makedirs(os.path.dirname(save_path) or ".", exist_ok=True)
+        fig.savefig(save_path, dpi=150, bbox_inches="tight")
+        plt.close(fig)
+    else:
+        plt.show()
+
+
