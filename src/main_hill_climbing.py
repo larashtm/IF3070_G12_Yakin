@@ -1,96 +1,101 @@
-import copy, csv, os, sys, time
-import matplotlib.pyplot as plt
+import copy, os, sys, time, matplotlib.pyplot as plt
 
 _src_dir = os.path.dirname(os.path.abspath(__file__))
 if _src_dir not in sys.path:
     sys.path.insert(0, _src_dir)
 
-import utils
-import hill_climbing
+import utils, utils_visualisation
+from hill_climbing_variants import (
+    bikin_kendaraan_awal, bikin_state_acak,
+    random_restart_hill_climbing, sideways_move_hill_climbing,
+    steepest_ascent_hill_climbing, stochastic_hill_climbing,
+)
+
+output = r"C:\Users\Zek\Python\IF3070_G12_Yakin\output\hill_climbing"
 
 
 def get_json_path():
-    """Mencari lokasi vehicles.json secara andal dari berbagai working directory."""
-    base_dir = os.path.dirname(os.path.abspath(__file__))
-    candidates = [
-        os.path.join(base_dir, "vehicles.json"),
-        os.path.join(base_dir, "..", "vehicles.json"),
-        "vehicles.json",
-        "src/vehicles.json",
-    ]
-    for p in candidates:
+    base = os.path.dirname(os.path.abspath(__file__))
+    for p in [os.path.join(base, "vehicles.json"), os.path.join(base, "..", "vehicles.json"), "vehicles.json", "src/vehicles.json"]:
         if os.path.exists(p):
             return os.path.abspath(p)
     return "vehicles.json"
 
 
+def plot(y, ylabel, title, run, start=0):
+    plt.figure(figsize=(10, 5))
+    plt.plot(range(start, start + len(y)), y)
+    plt.xlabel("Banyak Iterasi")
+    plt.ylabel(ylabel)
+    plt.title(f"{ylabel} terhadap Banyak Iterasi - {title} (Run {run})")
+    plt.grid(True)
+
+
 def run_hc_variant(v_name):
-    # jalanin varian Hill Climbing 3 kali percubaan
-    json_path = get_json()
-    template, kapal = bikin_kendaraan_awal(json_path), utils.load_json(json_path)[1]
-    
-    configs = {
-        "steepest": ("Steepest Ascent", "steepest_ascent", lambda st: steepest_ascent_hill_climbing(copy.deepcopy(st), kapal, max_iterations=3000, verbose=False)),
-        "stochastic": ("Stochastic", "stochastic", lambda st: stochastic_hill_climbing(copy.deepcopy(st), kapal, max_iterations=3000, num_candidates=10, verbose=False)),
-        "sideways": ("Sideways Move", "sideways_move", lambda st: sideways_move_hill_climbing(copy.deepcopy(st), kapal, max_iterations=3000, max_sideways_move=100, num_candidates=10, verbose=False)),
-        "random_restart": ("Random Restart", "random_restart", lambda st: random_restart_hill_climbing(kapal, max_restart=10, max_iterations_per_restart=1000, initial_vehicles=copy.deepcopy(st), num_candidates=10, verbose=False))
+    json_path = get_json_path()
+    vehicles, ship = utils.load_json(json_path)
+    template = bikin_kendaraan_awal(json_path)
+    colors = utils_visualisation.build_color_map(vehicles)
+    os.makedirs(output, exist_ok=True)
+
+    algos = {
+        "steepest": ("Steepest Ascent", lambda st: steepest_ascent_hill_climbing(copy.deepcopy(st), ship, max_iterations=3000, verbose=False)),
+        "stochastic": ("Stochastic", lambda st: stochastic_hill_climbing(copy.deepcopy(st), ship, max_iterations=3000, num_candidates=10, verbose=False)),
+        "sideways": ("Sideways Move", lambda st: sideways_move_hill_climbing(copy.deepcopy(st), ship, max_iterations=3000, max_sideways_move=100, num_candidates=10, verbose=False)),
+        "random_restart": ("Random Restart", lambda st: random_restart_hill_climbing(ship, max_restart=10, max_iterations_per_restart=1000, initial_vehicles=copy.deepcopy(st), num_candidates=10, verbose=False)),
     }
-    
-    title, prefix, algo = configs[v_name]
-    print(f"\n{'='*65}\n  {title.upper()} — 3 RUN\n{'='*65}")
-    summary, histories = [], []
+    title, algo = algos[v_name]
 
-    for run in range(1, 4):
-        init_st = bikin_state_acak(template, kapal)
-        init_of = utils.objective_function(init_st, kapal)
-        
-        print(f"\nRUN {run}\nState awal (OF = {init_of}):")
-        utils.display(init_st, kapal)
-        utils.display_image(init_st, kapal)
+    def gambar(st, run, nama, label):
+        fig, ax = plt.subplots(figsize=(12, 6))
+        utils_visualisation.draw_state(ax, st, ship, colors, f"Run {run} - {label}")
+        fig.savefig(os.path.join(output, f"{v_name}_run{run}_{nama}.png"), dpi=150, bbox_inches="tight")
 
-        t0 = time.perf_counter()
-        res = algo(init_st)
-        durasi = time.perf_counter() - t0
-        final_of = res[1]
-        total_iter = res[2]
-        status = res.status if hasattr(res, "status") else "-"
+    print(f"\n{title.upper()} - 3 RUN")
+    summary = []
 
-        print(f"\n  Run {run_idx}")
-        print(f"    Initial OF : {init_of}")
-        print(f"    Final OF   : {final_of}")
-        print(f"    Durasi     : {durasi:.4f} detik")
-        print(f"    Iterasi    : {total_iter}")
-        print(f"    Status     : {status}")
+    for run in range(1, 4): #run 3x
+        state = bikin_state_acak(template, ship)
+        initial_score = utils.objective_function(state, ship)
+        print(f"\nRUN {run}")
+        print(f"State awal (objective function = {initial_score})")
+        gambar(state, run, "state_awal", "State Awal")
 
-        summary.append((run_idx, init_of, final_of, total_iter, durasi, status))
+        start_time = time.perf_counter()
+        res = algo(state)
+        duration = time.perf_counter() - start_time
 
-    print(f"\n{'-' * 60}")
-    print(f"  RINGKASAN HASIL 3X RUN ({title})")
-    print(f"{'-' * 60}")
-    print(f"  {'Run':<6}{'Initial':<10}{'Final':<10}{'Iterasi':<12}{'Durasi (s)':<14}{'Status':<20}")
-    for run_i, init_s, fin_s, iters, dur, stat in summary:
-        print(f"  {run_i:<6}{init_s:<10}{fin_s:<10}{str(iters):<12}{dur:<14.4f}{stat:<20}")
-    print()
+        total_iter = sum(res.iterations_per_restart) if v_name == "random_restart" else res.total_iterations
+        print(f"State akhir (objective function = {res.best_score})")
+        gambar(res.best_vehicles, run, "state_akhir", "State Akhir")
+
+        summary.append((run, initial_score, res.best_score, total_iter, duration, res.status))
+
+        plot(res.history_score, "Objective Function", title, run)
+        plt.gcf().savefig(os.path.join(output, f"{v_name}_run{run}_plot_objFunc.png"), dpi=150, bbox_inches="tight")
+
+    print(f"\nHASIL 3X RUN ({title})")
+    print(f"{'Run':<5}{'Initial':<10}{'Final':<10}{'Iterasi':<10}{'Durasi (s)':<12}{'Status':<20}")
+    for run, init_s, final_s, iters, dur, stat in summary:
+        print(f"{run:<5}{init_s:<10}{final_s:<10}{iters:<10}{dur:<12.4f}{stat:<20}")
+
+    plt.show()
 
 
 # Fungsi publik per varian untuk dipanggil oleh main.py
 def main_steepest_ascent():
-    """Entry point untuk Steepest Ascent Hill Climbing."""
     run_hc_variant("steepest")
 
 
 def main_stochastic():
-    """Entry point untuk Stochastic Hill Climbing."""
     run_hc_variant("stochastic")
 
 
 def main_sideways_move():
-    """Entry point untuk Sideways Move Hill Climbing."""
     run_hc_variant("sideways")
 
 
 def main_random_restart():
-    """Entry point untuk Random Restart Hill Climbing."""
     run_hc_variant("random_restart")
 
 
