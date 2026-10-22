@@ -13,7 +13,7 @@ def sideways_move_hill_climbing(initial_vehicles, ship, max_iterations=3000, max
     while total_iterations < max_iterations:
         total_iterations += 1
         candidates = [get_random_neighbor(current_vehicles, ship) for _ in range(num_candidates)]
-        # skor yang sama juga boleh (sideways)
+        #skor yang sama juga boleh (sideways)
         eligible = [(c, s) for c in candidates if (s := objective_function(c, ship)) >= current_score]
         if not eligible: break
         top = max(s for _, s in eligible)

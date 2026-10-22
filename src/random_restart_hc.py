@@ -3,7 +3,7 @@ from hill_climbing import RandomRestartResult, bikin_kendaraan_awal, bikin_state
 from stochastic_hc import stochastic_hill_climbing
 
 def random_restart_hill_climbing(ship, max_restart=10, max_iterations_per_restart=1000, initial_vehicles=None, num_candidates=10, tampil=False):
-    # tiap restart pakai stochastic, restart pertama pakai initial_vehicles kalau dikasih
+    #tiap restart pakai stochastic, restart pertama pakai initial_vehicles kalau dikasih
     custom_initial = initial_vehicles is not None
     if initial_vehicles is None:
         initial_vehicles = bikin_kendaraan_awal()
@@ -18,7 +18,7 @@ def random_restart_hill_climbing(ship, max_restart=10, max_iterations_per_restar
         iterations_per_restart.append(iters)
         if best_s > best_score or best_vehicles is None:
             best_vehicles = copy.deepcopy(best_v)
-        for s in hist: # history = skor terbaik sampai titik itu
+        for s in hist: #hist itu history, skor terbaik sampai titik itu
             best_score = max(best_score, s)
             history.append(best_score)
         if tampil: print(f"[{i}] Restart. Skor Baru: {best_score}")

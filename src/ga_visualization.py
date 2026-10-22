@@ -10,7 +10,7 @@ def plot_convergence(ax,info,title):
     ax.grid(alpha=0.3)
     ax.legend(loc="lower right",fontsize=8)
     
-# menggabungkan grafik beberapa run dalam satu gambar, yang garis tebal = maks, yang garis putus-putus = rata-rata
+#menggabungkan grafik beberapa run dalam satu gambar, yang garis tebal = maks, yang garis putus-putus = rata-rata
 def plot_runs_convergence(ax,results,title): 
     palette = plt.get_cmap("tab10").colors
 

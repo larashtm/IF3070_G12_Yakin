@@ -1,7 +1,7 @@
 import copy, random, time, utils 
 
-# satu state isinya seluruh kendaraan
-# setiap kendaraan simpan x, y, arah, dan loaded
+#satu state isinya seluruh kendaraan
+#setiap kendaraan simpan x, y, arah, dan loaded
 
 
 def genetic_algorithm(vehicles, ship, population_size = 30, max_iter = 100, mutation_rate = 0.15, seed = None):

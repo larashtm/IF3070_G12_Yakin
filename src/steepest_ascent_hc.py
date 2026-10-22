@@ -3,7 +3,7 @@ from utils import objective_function
 from hill_climbing import SearchResult, get_all_neighbors, get_random_neighbor
 
 def steepest_ascent_hill_climbing(initial_vehicles, ship, max_iterations=3000, num_candidates=None, tampil=False):
-    # Varian Steepest Ascent: Evaluasi tetangga dan pindah ke skor tertinggi
+    #pindah ke skor tertinggi
     current_vehicles = copy.deepcopy(initial_vehicles)
     current_score = objective_function(current_vehicles, ship)
     history_score = [current_score]

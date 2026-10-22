@@ -3,7 +3,6 @@ import utils, simulated_annealing, matplotlib.pyplot as plt, copy, utils_visuali
 src = os.path.dirname(os.path.abspath(__file__))
 output = os.path.join(os.path.dirname(src), "output", "simulated_annealing") #output/ sejajar dengan src/
 
-# bikin folder final[x] baru, nomornya lanjut dari yang sudah ada (kosong -> final1)
 def new_final_folder(base):
     os.makedirs(base, exist_ok=True)
     nums = [int(n[5:]) for n in os.listdir(base) if n.startswith("final") and n[5:].isdigit()]

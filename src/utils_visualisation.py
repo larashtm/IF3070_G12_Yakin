@@ -46,7 +46,7 @@ def draw_state(ax,vehicles,ship,colors,title):
     for v in inside: 
         draw_vehicles(ax,v,v.x,v.y,colors[v.id])
 
-    #area luar di sebelah kanan kapal, lebar baris minimal selebar kendaraan terlebar
+    #area luar di sebelah kanan kapal, lebar baris minimal selebar kendaraan terlebar biar ga overflow
     outside_x = W + 2 
     row_width = max([W] + [v.dimension.width for v in outside])
     positions, outside_height = layout_outside(outside, row_width)
@@ -57,7 +57,7 @@ def draw_state(ax,vehicles,ship,colors,title):
         x,y=positions[v.id]
         draw_vehicles(ax,v,outside_x+x,y,colors[v.id],outside=True)
 
-    #batas gambar (y dibalik supaya y bertambah ke bawah), skala x dan y sama
+    #batas gambar (y dibalik, y bertambah ke bawah), skala x dan y sama
     ax.set_xlim(-1.5,outside_x + row_width + 1.5)
     ax.set_ylim(max(L,outside_height) + 1.5, -2.5)
     ax.set_aspect("equal")

@@ -1,7 +1,7 @@
 import copy, os, random, utils
 from utils import Vehicle, exceed_capacity_limit, exceed_ship_limit, move, not_overlapping, rotate, swap
 
-# hasilnya tuple biar bisa di-unpack, tapi atributnya tetap bisa diakses pakai nama
+#hasilnya tuple biar bisa di-unpack, tapi atributnya tetap bisa diakses pakai nama
 class SearchResult(tuple):
     def __new__(cls, best_vehicles, best_score, total_iterations, history_score, status="Local Optima", sideways_moves=0):
         self = super().__new__(cls, (best_vehicles, best_score, total_iterations, history_score))
@@ -44,7 +44,7 @@ def _clone_state(vehicles, indices):
 def get_all_neighbors(vehicles, ship):
     neighbors = []
     w, l = ship.dimension.width, ship.dimension.length
-    # 1. Pindah posisi (move)
+    #move
     for i, v in enumerate(vehicles):
         if not v.is_loaded: continue
         mx, my = max(0, w - v.dimension.width), max(0, l - v.dimension.length)
@@ -54,7 +54,7 @@ def get_all_neighbors(vehicles, ship):
                     n = _clone_state(vehicles, [i])
                     n[i].x, n[i].y = nx, ny
                     neighbors.append(n)
-    # 2. swap posisi kendaraan di dek
+    #swap
     loaded = [i for i, v in enumerate(vehicles) if v.is_loaded]
     for a in range(len(loaded)):
         for b in range(a + 1, len(loaded)):
@@ -63,7 +63,7 @@ def get_all_neighbors(vehicles, ship):
             n[ia].x, n[ib].x = n[ib].x, n[ia].x
             n[ia].y, n[ib].y = n[ib].y, n[ia].y
             neighbors.append(n)
-    # 3. rotate
+    #rotate
     for i, v in enumerate(vehicles):
         if not v.is_loaded: continue
         n = _clone_state(vehicles, [i])
@@ -73,7 +73,7 @@ def get_all_neighbors(vehicles, ship):
         veh.x = min(veh.x, max(0, w - veh.dimension.width))
         veh.y = min(veh.y, max(0, l - veh.dimension.length))
         neighbors.append(n)
-    # 4. Toggle muat / turunkan kendaraan
+    #load
     for i, v in enumerate(vehicles):
         if v.is_loaded:
             n = _clone_state(vehicles, [i])
@@ -93,7 +93,6 @@ def bikin_state_acak(template, ship):
     w, l = ship.dimension.width, ship.dimension.length
     for v in state:
         v.orientation = random.choice(["Horizontal", "Vertical"])
-        # Vertical = panjang >= lebar, Horizontal sebaliknya
         if (v.orientation == "Vertical") == (v.dimension.width > v.dimension.length):
             v.dimension.width, v.dimension.length = v.dimension.length, v.dimension.width
         v.is_loaded = random.choice([True, False])
@@ -117,7 +116,7 @@ def bikin_kendaraan_awal(json_path=None):
         if v_list: return v_list
     except Exception: pass
 
-    # Fallback dummy kalau file json nyasar atau gak ketemu
+    #eksperimen sementara, dummy kalau file json nyasar atau gak ketemu
     return [
         Vehicle("V1", 2, 4, "Horizontal", 150, 200, 1),
         Vehicle("V2", 2, 4, "Horizontal", 200, 300, 2),

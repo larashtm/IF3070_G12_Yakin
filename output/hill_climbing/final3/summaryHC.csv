@@ -1,4 +1,4 @@
 algoritma,percobaan,initial_of,final_of,durasi_detik,jumlah_iterasi,status
-Stochastic,1,1154,1516,0.0114,4,Local Optima
-Stochastic,2,2051,2051,0.0031,1,Local Optima
-Stochastic,3,1351,1833,0.0124,4,Local Optima
+Sideways Move,1,1869,2386,0.6782,236,Local Optima
+Sideways Move,2,1385,2224,0.9513,308,Max Sideways Reached
+Sideways Move,3,1527,2164,0.8535,246,Max Sideways Reached

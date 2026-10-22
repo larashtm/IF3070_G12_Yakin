@@ -1,4 +1,4 @@
 algoritma,percobaan,initial_of,final_of,durasi_detik,jumlah_iterasi,status
-Sideways Move,1,1190,2110,0.5801,186,Max Sideways Reached
-Sideways Move,2,1150,2417,1.5816,446,Max Sideways Reached
-Sideways Move,3,1943,2354,1.0181,340,Max Sideways Reached
+Random Restart,1,1757,1846,0.0800,20,Max Restart Reached
+Random Restart,2,1817,2071,0.1095,24,Max Restart Reached
+Random Restart,3,1610,2130,0.0699,20,Max Restart Reached

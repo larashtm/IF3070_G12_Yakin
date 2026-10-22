@@ -6,7 +6,7 @@ import utils, ga_visualization as viz
 from ga_genetic_algorithm import genetic_algorithm 
 from pathlib import Path
 
-# bikin folder final[x] baru, nomornya lanjut dari yang sudah ada (kosong -> final1)
+#bikin folder final[x] baru, nomornya lanjut dari yang sudah ada (kosong -> final1)
 def new_final_folder(base):
     os.makedirs(base, exist_ok=True)
     nums = [int(n[5:]) for n in os.listdir(base) if n.startswith("final") and n[5:].isdigit()]
@@ -14,7 +14,7 @@ def new_final_folder(base):
     os.makedirs(folder)
     return folder
 
-#Time untuk menjalankan genetic algorithm 
+#time buat jalanin genetic algorithm 
 
 #pengaturan eksperimen
 BASE_DIR: Path = Path(__file__).resolve().parent.parent / "output" / "genetic_algorithm"

@@ -8,7 +8,7 @@ from stochastic_hc import stochastic_hill_climbing
 src = os.path.dirname(os.path.abspath(__file__))
 output = os.path.join(os.path.dirname(src), "output", "hill_climbing") #output/ sejajar dengan src/
 
-# bikin folder final[x] baru, nomornya lanjut dari yang sudah ada (kosong -> final1)
+
 def new_final_folder(base):
     os.makedirs(base, exist_ok=True)
     nums = [int(n[5:]) for n in os.listdir(base) if n.startswith("final") and n[5:].isdigit()]
@@ -83,7 +83,7 @@ def run_hc_variant(v_name, out=None):
     for run, init_s, final_s, iters, dur, stat in summary:
         print(f"{run:<5}{init_s:<10}{final_s:<10}{iters:<10}{dur:<12.4f}{stat:<20}")
 
-    # summaryHC, kalau varian lain jalan di folder yang sama barisnya nambah
+    #summaryHC, kalau varian lain jalan di folder yang sama barisnya nambah
     path = os.path.join(out, "summaryHC.csv")
     baru = not os.path.exists(path)
     with open(path, "a", newline="", encoding="utf-8") as f:
@@ -95,8 +95,6 @@ def run_hc_variant(v_name, out=None):
 
     #plt.show()
 
-
-# Fungsi publik per varian untuk dipanggil oleh main.py
 def main_steepest_ascent():
     run_hc_variant("steepest")
 
