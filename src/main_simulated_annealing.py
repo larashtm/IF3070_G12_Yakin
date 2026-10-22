@@ -53,7 +53,7 @@ def main_simulated_annealing():
         fig.savefig(os.path.join(out, f"{prefix}_run{run}_state_awal.png"), dpi=150, bbox_inches="tight")
 
         best_state, best_score, objective_function_value, stuck_count, duration, acceptance_probabilities = simulated_annealing.simulated_annealing(
-            copy.deepcopy(state), ship, max_iter=1000, init_temp=30, cooling_rate=0.99, stuck_threshold=10, objective=objective)
+            copy.deepcopy(state), ship, max_iter=1000, init_temp=100, cooling_rate=0.99, stuck_threshold=10, objective=objective)
 
         print(f"State akhir (objective function = {best_score})")
         #utils.display(best_state, ship)

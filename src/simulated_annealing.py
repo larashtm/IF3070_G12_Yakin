@@ -18,7 +18,7 @@ def get_neighbor(vehicles, ship):
     return neighbor
 
 
-def simulated_annealing(initial_state, ship, max_iter=1000, init_temp=30, cooling_rate=0.99, stuck_threshold=10, objective=utils.objective_function):  #awalnya kan pake 100, tapi ganti 1000 biar keliatan pola pendinginan
+def simulated_annealing(initial_state, ship, max_iter=1000, init_temp=100, cooling_rate=0.99, stuck_threshold=10, objective=utils.objective_function):  #awalnya kan pake 100, tapi ganti 1000 biar keliatan pola pendinginan
     #initialize
     start_time = time.perf_counter()
     #yang T besar <0.5 apa ya? cek catetan dulu
