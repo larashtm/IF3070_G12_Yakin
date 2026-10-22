@@ -1,0 +1,4 @@
+algoritma,percobaan,initial_of,final_of,durasi_detik,jumlah_iterasi,status
+Stochastic Hill Climbing,1,1311,1866,0.1444,7,Local Optima
+Stochastic Hill Climbing,2,1313,1982,0.1010,5,Local Optima
+Stochastic Hill Climbing,3,1824,1824,0.0192,1,Local Optima

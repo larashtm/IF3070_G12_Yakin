@@ -1,0 +1,4 @@
+algoritma,percobaan,initial_of,final_of,durasi_detik,jumlah_iterasi,status
+Steepest Ascent Hill Climbing,1,1353,2226,1.8229,5,Local Optima
+Steepest Ascent Hill Climbing,2,2081,2164,0.5172,2,Local Optima
+Steepest Ascent Hill Climbing,3,1782,1843,0.5863,2,Local Optima

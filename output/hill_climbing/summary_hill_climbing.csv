@@ -1,0 +1,25 @@
+algoritma,percobaan,initial_of,final_of,durasi_detik,jumlah_iterasi,status
+Steepest Ascent Hill Climbing,1,1864,2018,1.0135,2,Local Optima
+Steepest Ascent Hill Climbing,2,1789,1954,0.8980,2,Local Optima
+Steepest Ascent Hill Climbing,3,1975,1975,0.3247,1,Local Optima
+Stochastic Hill Climbing,1,1095,1428,0.1417,5,Local Optima
+Stochastic Hill Climbing,2,1682,1682,0.0353,1,Local Optima
+Stochastic Hill Climbing,3,1340,1458,0.0608,2,Local Optima
+Sideways Move Hill Climbing,1,1506,2417,7.9548,399 (378 sideways),Max Sideways Reached
+Sideways Move Hill Climbing,2,1940,2470,7.6529,376 (364 sideways),Max Sideways Reached
+Sideways Move Hill Climbing,3,2090,2227,4.7268,223 (218 sideways),Max Sideways Reached
+Random Restart Hill Climbing,1,1700,2126,0.9626,34 (10 restarts),Max Restart Reached
+Random Restart Hill Climbing,2,2268,2268,0.7607,32 (10 restarts),Max Restart Reached
+Random Restart Hill Climbing,3,1834,2083,0.8150,25 (10 restarts),Max Restart Reached
+Steepest Ascent Hill Climbing,1,1353,2226,1.8229,5,Local Optima
+Steepest Ascent Hill Climbing,2,2081,2164,0.5172,2,Local Optima
+Steepest Ascent Hill Climbing,3,1782,1843,0.5863,2,Local Optima
+Stochastic Hill Climbing,1,1311,1866,0.1444,7,Local Optima
+Stochastic Hill Climbing,2,1313,1982,0.1010,5,Local Optima
+Stochastic Hill Climbing,3,1824,1824,0.0192,1,Local Optima
+Sideways Move Hill Climbing,1,1381,2408,7.1644,344 (333 sideways),Max Sideways Reached
+Sideways Move Hill Climbing,2,1365,1912,1.8771,88 (83 sideways),Local Optima
+Sideways Move Hill Climbing,3,1603,2287,4.0817,198 (184 sideways),Max Sideways Reached
+Random Restart Hill Climbing,1,1405,2288,0.7463,28 (10 restarts),Max Restart Reached
+Random Restart Hill Climbing,2,1475,2173,0.8848,32 (10 restarts),Max Restart Reached
+Random Restart Hill Climbing,3,1029,2135,0.7525,28 (10 restarts),Max Restart Reached

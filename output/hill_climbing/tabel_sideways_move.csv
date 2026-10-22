@@ -1,0 +1,4 @@
+algoritma,percobaan,initial_of,final_of,durasi_detik,jumlah_iterasi,status
+Sideways Move Hill Climbing,1,1381,2408,7.1644,344 (333 sideways),Max Sideways Reached
+Sideways Move Hill Climbing,2,1365,1912,1.8771,88 (83 sideways),Local Optima
+Sideways Move Hill Climbing,3,1603,2287,4.0817,198 (184 sideways),Max Sideways Reached
