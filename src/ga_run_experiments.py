@@ -15,7 +15,7 @@ from pathlib import Path
 #Time untuk menjalankan genetic algorithm 
 
 #pengaturan eksperimen
-OUTPUT_DIR="output/ga"
+OUTPUT_DIR: Path = Path(__file__).resolve().parent.parent / "output" / "ga"
 NUM_RUNS=3
 MUTATION_RATE=0.15
 
