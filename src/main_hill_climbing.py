@@ -1,138 +1,128 @@
-import copy
-import os
-import sys
-import time
+import copy, csv, os, sys, time
+import matplotlib.pyplot as plt
 
-# Pastikan direktori saat ini masuk ke sys.path untuk impor lokal
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+_src_dir = os.path.dirname(os.path.abspath(__file__))
+if _src_dir not in sys.path:
+    sys.path.insert(0, _src_dir)
 
 import utils
-import hill_climbing
+from hill_climbing_variants import (
+    bikin_kendaraan_awal, bikin_state_acak, random_restart_hill_climbing,
+    sideways_move_hill_climbing, steepest_ascent_hill_climbing, stochastic_hill_climbing
+)
+
+BASE_DIR = os.path.dirname(_src_dir)
+OUTPUT_DIR = os.path.join(BASE_DIR, "output", "hill_climbing")
+os.makedirs(OUTPUT_DIR, exist_ok=True)
 
 
-def get_json_path():
-    """Mencari lokasi vehicles.json secara andal dari berbagai working directory."""
-    base_dir = os.path.dirname(os.path.abspath(__file__))
-    candidates = [
-        os.path.join(base_dir, "vehicles.json"),
-        os.path.join(base_dir, "..", "vehicles.json"),
-        "vehicles.json",
-        "src/vehicles.json",
-    ]
-    for p in candidates:
+def render_ascii(vehicles, ship):
+    # hasilin representasi teks grid ASCII untuk kapal
+    grid = [["." for _ in range(ship.dimension.width)] for _ in range(ship.dimension.length)]
+    for v in vehicles:
+        if v.is_loaded:
+            for x in range(v.x, v.x + v.dimension.width):
+                for y in range(v.y, v.y + v.dimension.length):
+                    if 0 <= x < ship.dimension.width and 0 <= y < ship.dimension.length:
+                        grid[y][x] = v.id[0]
+    return "\n".join("".join(r) for r in grid)
+
+
+def get_json():
+    # cari fail vehicles.json secara automatik
+    for p in [os.path.join(os.path.dirname(__file__), "vehicles.json"), "vehicles.json", "src/vehicles.json"]:
         if os.path.exists(p):
             return os.path.abspath(p)
-    return os.path.join(base_dir, "vehicles.json")
+    return "vehicles.json"
 
 
-def run_hc_variant(variant_name):
-    """Menjalankan satu varian Hill Climbing sebanyak 3 kali percobaan independen."""
-    json_path = get_json_path()
-    kendaraan_template = hill_climbing.bikin_kendaraan_awal(json_path)
-    _, kapal = utils.load_json(json_path)
-
-    label_map = {
-        "steepest": "Steepest Ascent Hill Climbing",
-        "stochastic": "Stochastic Hill Climbing",
-        "sideways": "Sideways Move Hill Climbing",
-        "random_restart": "Random Restart Hill Climbing",
+def run_hc_variant(v_name):
+    # jalanin varian Hill Climbing 3 kali percubaan
+    json_path = get_json()
+    template, kapal = bikin_kendaraan_awal(json_path), utils.load_json(json_path)[1]
+    
+    configs = {
+        "steepest": ("Steepest Ascent", "steepest_ascent", lambda st: steepest_ascent_hill_climbing(copy.deepcopy(st), kapal, max_iterations=3000, verbose=False)),
+        "stochastic": ("Stochastic", "stochastic", lambda st: stochastic_hill_climbing(copy.deepcopy(st), kapal, max_iterations=3000, num_candidates=10, verbose=False)),
+        "sideways": ("Sideways Move", "sideways_move", lambda st: sideways_move_hill_climbing(copy.deepcopy(st), kapal, max_iterations=3000, max_sideways_move=100, num_candidates=10, verbose=False)),
+        "random_restart": ("Random Restart", "random_restart", lambda st: random_restart_hill_climbing(kapal, max_restart=10, max_iterations_per_restart=1000, initial_vehicles=copy.deepcopy(st), num_candidates=10, verbose=False))
     }
+    
+    title, prefix, algo = configs[v_name]
+    print(f"\n{'='*65}\n  {title.upper()} — 3 RUN\n{'='*65}")
+    summary, histories = [], []
 
-    title = label_map.get(variant_name, variant_name)
-    print(f"\n{'=' * 60}")
-    print(f"  {title} — 3 Run")
-    print(f"{'=' * 60}")
-
-    summary = []
-
-    for run_idx in range(1, 4):
-        init_st = hill_climbing.bikin_state_acak(kendaraan_template, kapal)
+    for run in range(1, 4):
+        init_st = bikin_state_acak(template, kapal)
         init_of = utils.objective_function(init_st, kapal)
+        
+        print(f"\nRUN {run}\nState awal (OF = {init_of}):")
+        utils.display(init_st, kapal)
+        utils.display_image(init_st, kapal)
 
         t0 = time.perf_counter()
-        if variant_name == "steepest":
-            res = hill_climbing.steepest_ascent_hill_climbing(
-                copy.deepcopy(init_st), kapal, max_iterations=3000, verbose=False
-            )
-        elif variant_name == "stochastic":
-            res = hill_climbing.stochastic_hill_climbing(
-                copy.deepcopy(init_st), kapal, max_iterations=3000, num_candidates=10, verbose=False
-            )
-        elif variant_name == "sideways":
-            res = hill_climbing.sideways_move_hill_climbing(
-                copy.deepcopy(init_st),
-                kapal,
-                max_iterations=3000,
-                max_sideways_move=100,
-                num_candidates=10,
-                verbose=False,
-            )
-        elif variant_name == "random_restart":
-            res = hill_climbing.random_restart_hill_climbing(
-                kapal,
-                max_restart=10,
-                max_iterations_per_restart=1000,
-                initial_vehicles=copy.deepcopy(init_st),
-                num_candidates=10,
-                verbose=False,
-            )
-        else:
-            raise ValueError(f"Varian '{variant_name}' tidak dikenal.")
-
+        res = algo(init_st)
         durasi = time.perf_counter() - t0
-        final_of = res[1]
-        total_iter = res[2]
-        status = res.status if hasattr(res, "status") else "-"
 
-        print(f"\n  Run {run_idx}")
-        print(f"    Initial OF : {init_of}")
-        print(f"    Final OF   : {final_of}")
-        print(f"    Durasi     : {durasi:.4f} detik")
-        print(f"    Iterasi    : {total_iter}")
-        print(f"    Status     : {status}")
+        iters = sum(res.iterations_per_restart) if v_name == "random_restart" else res.total_iterations
+        extra = f"({res.total_restarts} restarts)" if v_name == "random_restart" else (f"({res.sideways_moves} sideways)" if v_name == "sideways" else "")
+        iter_info = f"{iters} {extra}".strip()
 
-        summary.append((run_idx, init_of, final_of, total_iter, durasi, status))
+        print(f"\nState terbaik (OF = {res.best_score}):")
+        utils.display(res.best_vehicles, kapal)
+        utils.display_image(res.best_vehicles, kapal)
+        print(f"Durasi: {durasi:.4f}s | Iterasi: {iter_info} | Status: {res.status}")
 
-    print(f"\n{'-' * 60}")
-    print(f"  RINGKASAN HASIL 3X RUN ({title})")
-    print(f"{'-' * 60}")
-    print(f"  {'Run':<6}{'Initial':<10}{'Final':<10}{'Iterasi':<12}{'Durasi (s)':<14}{'Status':<20}")
-    for run_i, init_s, fin_s, iters, dur, stat in summary:
-        print(f"  {run_i:<6}{init_s:<10}{fin_s:<10}{str(iters):<12}{dur:<14.4f}{stat:<20}")
-    print()
+        with open(os.path.join(OUTPUT_DIR, f"{prefix}_run{run}_states.txt"), "w", encoding="utf-8") as f:
+            f.write(f"State awal ({title}, run={run}) (OF = {init_of})\n{render_ascii(init_st, kapal)}\n\n")
+            f.write(f"State akhir ({title}, run={run}) (OF = {res.best_score})\n{render_ascii(res.best_vehicles, kapal)}\n")
 
+        histories.append((run, res.history_score))
+        plt.figure(figsize=(7, 4))
+        plt.plot(res.history_score, marker="o", markersize=3, color="#1f77b4")
+        plt.title(f"{title} - Run {run}", fontsize=11, fontweight="bold")
+        plt.xlabel("Iterasi")
+        plt.ylabel("Objective Function")
+        plt.grid(True, linestyle="--", alpha=0.5)
+        plt.savefig(os.path.join(OUTPUT_DIR, f"{prefix}_run{run}.png"), bbox_inches="tight", dpi=150)
+        plt.close()
 
-# Fungsi publik per varian untuk dipanggil oleh main.py
-def main_steepest_ascent():
-    """Entry point untuk Steepest Ascent Hill Climbing."""
-    run_hc_variant("steepest")
+        summary.append((run, init_of, res.best_score, iter_info, durasi, res.status))
 
+    # hasilnya disimpan ke fail CSV varian 
+    for mode, filename in [("w", f"tabel_{prefix}.csv"), ("a", "summary_hill_climbing.csv")]:
+        if mode == "w" or not os.path.exists(os.path.join(OUTPUT_DIR, filename)):
+            with open(os.path.join(OUTPUT_DIR, filename), mode, newline="", encoding="utf-8") as f:
+                csv.writer(f).writerow(["algoritma", "percobaan", "initial_of", "final_of", "durasi_detik", "jumlah_iterasi", "status"])
+        with open(os.path.join(OUTPUT_DIR, filename), "a", newline="", encoding="utf-8") as f:
+            w = csv.writer(f)
+            for r in summary:
+                w.writerow([title, r[0], r[1], r[2], f"{r[4]:.4f}", r[3], r[5]])
 
-def main_stochastic():
-    """Entry point untuk Stochastic Hill Climbing."""
-    run_hc_variant("stochastic")
+    plt.figure(figsize=(8, 4.5))
+    for r, h in histories:
+        plt.plot(h, label=f"Run {r}", linewidth=1.8, marker="o", markersize=3)
+    plt.title(f"Konvergensi 3 Run - {title}", fontsize=11, fontweight="bold")
+    plt.xlabel("Iterasi")
+    plt.ylabel("Objective Function")
+    plt.legend()
+    plt.grid(True, linestyle="--", alpha=0.5)
+    plt.savefig(os.path.join(OUTPUT_DIR, f"{prefix}_convergence.png"), bbox_inches="tight", dpi=150)
+    plt.close()
 
+    print(f"Selesai! Output disimpan di {OUTPUT_DIR}\n")
 
-def main_sideways_move():
-    """Entry point untuk Sideways Move Hill Climbing."""
-    run_hc_variant("sideways")
-
-
-def main_random_restart():
-    """Entry point untuk Random Restart Hill Climbing."""
-    run_hc_variant("random_restart")
-
+def main_steepest_ascent(): run_hc_variant("steepest")
+def main_stochastic(): run_hc_variant("stochastic")
+def main_sideways_move(): run_hc_variant("sideways")
+def main_random_restart(): run_hc_variant("random_restart")
 
 def main_hill_climbing(variant=None):
-    """Entry point umum untuk modul Hill Climbing."""
-    if variant is not None:
+    if variant:
         run_hc_variant(variant)
     else:
-        # Jalankan seluruh varian secara berurutan jika dipanggil tanpa argumen
-        main_steepest_ascent()
-        main_stochastic()
-        main_sideways_move()
-        main_random_restart()
+        for fn in [main_steepest_ascent, main_stochastic, main_sideways_move, main_random_restart]:
+            fn()
 
 
 if __name__ == "__main__":
