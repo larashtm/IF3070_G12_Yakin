@@ -5,7 +5,7 @@ def plot_convergence(ax,info,title):
     ax.plot(info["max_history"], color="#1f77b4",linewidth=2,label="Maksimum populasi")
     ax.plot(info["mean_history"], color="#ff7f0e",linewidth=1.6,linestyle="--",label="Rata-rata populasi")
     ax.set_xlabel("Iterasi")
-    ax.set_ylabel("Objective(total shipping fee)")
+    ax.set_ylabel(info["objective_name"])
     ax.set_title(title,fontsize=10)
     ax.grid(alpha=0.3)
     ax.legend(loc="lower right",fontsize=8)
@@ -26,7 +26,7 @@ def plot_runs_convergence(ax,results,title):
         ax.plot(info["mean_history"],color=color,linewidth=1.2,linestyle="--",label=f"Run {run} rata-rata")
 
     ax.set_xlabel("Generasi (0 = populasi awal)")
-    ax.set_ylabel("Objective")
+    ax.set_ylabel(info["objective_name"])
     ax.set_title(title,fontsize=10)
 
     ax.grid(alpha=0.3)

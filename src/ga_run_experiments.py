@@ -31,7 +31,7 @@ ITER_CONTROL=100
 POP_VARIATIONS=[10,30,60]
 
 #jalanin satu konfigurasi sebanyak NUM_RUNS kali 
-def run_config(vehicles,ship,population_size,max_iter): 
+def run_config(vehicles,ship,population_size,max_iter,objective):
     folder=f"{output_dir}/pop{population_size}_iter{max_iter}"
     os.makedirs(folder,exist_ok=True)
 
@@ -40,9 +40,9 @@ def run_config(vehicles,ship,population_size,max_iter):
     for run in range(1,NUM_RUNS+1): 
         #seed berbeda tiap run, tetapi bisa ngulnag
         seed=run
-        best_state,best_score,info=genetic_algorithm(vehicles,ship,population_size=population_size,max_iter=max_iter,mutation_rate=MUTATION_RATE,seed=seed)
+        best_state,best_score,info=genetic_algorithm(vehicles,ship,population_size=population_size,max_iter=max_iter,mutation_rate=MUTATION_RATE,seed=seed,objective=objective)
 
-        tag=f"populasi={population_size},iterasi={max_iter},run={run}"
+        tag=f"objective={info['objective_name']},populasi={population_size},iterasi={max_iter},run={run}"
         utils.display_image(info["initial_state"],ship,f"State awal({tag})",f"{folder}/run{run}_initial.png")
         utils.display_image(best_state,ship,f"State akhir({tag})",f"{folder}/run{run}_final.png")
         buf = io.StringIO()
@@ -82,6 +82,7 @@ def run_config(vehicles,ship,population_size,max_iter):
 
 def save_summary_csv(all_results,path): 
     columns=[
+        "objective",
         "populasi",
         "iterasi",
         "run",
@@ -101,6 +102,7 @@ def save_summary_csv(all_results,path):
             for result in results: 
                 info = result["info"]
                 writer.writerow({
+                    "objective":info["objective_name"],
                     "populasi":population_size,
                     "iterasi":max_iter,
                     "run":result["run"], 
@@ -170,6 +172,13 @@ def plot_parameter_effect(experiment_groups,path):
 
 def main(): 
     global output_dir
+    choice: str = input("Objective Function (1 = Max Shipping Fee, 2 = Min ETA): ").strip()
+    if choice == "2":
+        objective = utils.objective_function_bonus
+    elif choice == "1":
+        objective = utils.objective_function
+    else:
+        raise ValueError("Pilihan objective tidak valid. Masukkan 1 atau 2.")
     output_dir=Path(new_final_folder(BASE_DIR)) #tiap run masuk folder final baru
     data_path=Path(__file__).resolve().parent/"vehicles.json"
     vehicles,ship=utils.load_json(str(data_path))
@@ -198,7 +207,7 @@ def main():
             if config not in all_results:
                 all_results[config]=run_config(
                     vehicles,ship,
-                    population_size,max_iter,
+                    population_size,max_iter,objective,
                 )
             experiments.append({
                 "value":value,

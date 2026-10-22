@@ -4,7 +4,7 @@ import copy, random, time, utils
 #setiap kendaraan simpan x, y, arah, dan loaded
 
 
-def genetic_algorithm(vehicles, ship, population_size = 30, max_iter = 100, mutation_rate = 0.15, seed = None):
+def genetic_algorithm(vehicles, ship, population_size = 30, max_iter = 100, mutation_rate = 0.15, seed = None, *, objective):
     #pengecekan input sebelum GA jalan 
     if type(population_size) != int: 
         raise ValueError("Jumlah population harus bilangan bulat.")
@@ -42,7 +42,7 @@ def genetic_algorithm(vehicles, ship, population_size = 30, max_iter = 100, muta
     scores = []
 
     for state in population: 
-        score = utils.objective_function(state, ship)
+        score = objective(state, ship)
         scores.append(score) #tambahkan angka ke list scores
 
     best_index = scores.index(max(scores))
@@ -75,7 +75,7 @@ def genetic_algorithm(vehicles, ship, population_size = 30, max_iter = 100, muta
         #hitung skor generasi baru 
         scores = []
         for state in population: 
-            score=utils.objective_function(state,ship)
+            score=objective(state,ship)
             scores.append(score)
         best_index= scores.index(max(scores))
 
@@ -92,6 +92,7 @@ def genetic_algorithm(vehicles, ship, population_size = 30, max_iter = 100, muta
     duration=time.perf_counter()-start_time
 
     info = {
+        "objective_name": objective.__name__,
         "initial_population": initial_population, 
         "initial_state": initial_state, 
         "initial_score": initial_score, 
@@ -254,4 +255,4 @@ def park_unloaded(state,ship):
             vehicle.y = next_y
 
             #beri jarak satu sel sebelum kendaraan berikutnya
-            next_y += vehicle.dimension.length + 1 
+            next_y += vehicle.dimension.length + 1
