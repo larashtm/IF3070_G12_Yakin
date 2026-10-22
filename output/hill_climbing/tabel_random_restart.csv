@@ -1,0 +1,4 @@
+algoritma,percobaan,initial_of,final_of,durasi_detik,jumlah_iterasi,status
+Random Restart Hill Climbing,1,1405,2288,0.7463,28 (10 restarts),Max Restart Reached
+Random Restart Hill Climbing,2,1475,2173,0.8848,32 (10 restarts),Max Restart Reached
+Random Restart Hill Climbing,3,1029,2135,0.7525,28 (10 restarts),Max Restart Reached
